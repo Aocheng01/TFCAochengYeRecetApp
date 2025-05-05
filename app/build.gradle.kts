@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -63,4 +64,18 @@ dependencies {
 
     // Añade Coil para cargar imágenes
     implementation("io.coil-kt:coil:2.6.0")
+
+
+    // Importa Firebase Bill of Materials (BoM) - gestiona versiones
+    implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
+
+    // When using the BoM, don't specify versions in Firebase dependencies
+    implementation("com.google.firebase:firebase-analytics")
+
+    // Dependencia de Firebase Authentication (KTX para extensiones Kotlin)
+    implementation("com.google.firebase:firebase-auth-ktx")
+
+    // Dependencia para Google Sign-In (Necesaria para el login con Google)
+    implementation("com.google.android.gms:play-services-auth:21.2.0")
+
 }

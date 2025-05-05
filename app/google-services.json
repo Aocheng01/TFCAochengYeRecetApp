@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "686489762094",
+    "project_id": "tfcrecetapp",
+    "storage_bucket": "tfcrecetapp.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:686489762094:android:5228df93f8c6b4492322bf",
+        "android_client_info": {
+          "package_name": "com.example.recetapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "686489762094-7memcnkrphfodvg5d63epc42qeb6tl1t.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.recetapp",
+            "certificate_hash": "dfa83d21939d3a2db8da8707586bded9ab5e6d80"
+          }
+        },
+        {
+          "client_id": "686489762094-7eu7602pb1gtcd60pvoroproup5pe8p3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCd7Ui0tZssrSZRUhsdNHK1E89fkS2ycr0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "686489762094-7eu7602pb1gtcd60pvoroproup5pe8p3.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
