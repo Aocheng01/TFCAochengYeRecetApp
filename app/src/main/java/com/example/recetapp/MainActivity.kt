@@ -1,6 +1,7 @@
 package com.example.recetapp
 
 import android.content.Context // Importar Context
+import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -13,6 +14,7 @@ import com.example.recetapp.adapters.RecipeAdapter
 import com.example.recetapp.api.RetrofitClient
 import com.example.recetapp.data.Hit
 import com.example.recetapp.data.RecipeResponse
+import com.google.firebase.auth.FirebaseAuth
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -21,11 +23,15 @@ class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
 
+    //Instancia de Firebase Authentication
+    private lateinit var auth: FirebaseAuth
+
     // Referencias a las vistas
     private lateinit var recyclerView: RecyclerView
     private lateinit var recipeAdapter: RecipeAdapter
     private lateinit var editTextSearchQuery: EditText // Referencia al EditText
     private lateinit var buttonSearch: Button         // Referencia al Button
+    private lateinit var buttonLogout: Button         // Referencia al Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,7 +41,8 @@ class MainActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recyclerViewRecipes)
         editTextSearchQuery = findViewById(R.id.editTextSearchQuery) // Busca el EditText
         buttonSearch = findViewById(R.id.buttonSearch)             // Busca el Button
-
+        buttonLogout = findViewById(R.id.buttonLogout)             // Busca el Button
+        auth = FirebaseAuth.getInstance()
         // --- Configuración del RecyclerView (igual que antes) ---
         recipeAdapter = RecipeAdapter(emptyList())
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -54,8 +61,19 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        // Ya NO llamamos a la API automáticamente al crear la actividad
-        // searchRecipesApi("pasta") // Comenta o elimina esta línea
+        //Listener boton logout
+        buttonLogout.setOnClickListener {
+            Log.d(TAG, "Botón de logout presionado.")
+            // Lógica para cerrar sesión
+            auth.signOut()
+
+            // Navegar a la actividad de inicio de sesión
+            val intent = Intent(this, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Limpia la pila de actividades
+            startActivity(intent)
+            finish()
+
+        }
     }
 
     // Función para ocultar el teclado (útil)
@@ -68,7 +86,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    // La función searchRecipesApi se mantiene igual que antes
     private fun searchRecipesApi(query: String) {
         Log.d(TAG, "Iniciando búsqueda de recetas para: $query")
         val apiService = RetrofitClient.instance
