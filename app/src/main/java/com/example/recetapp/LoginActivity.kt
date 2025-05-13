@@ -1,5 +1,6 @@
 package com.example.recetapp
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -8,11 +9,21 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.common.SignInButton
+import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 
 class LoginActivity : AppCompatActivity() {
@@ -31,6 +42,11 @@ class LoginActivity : AppCompatActivity() {
     // El botón de Google lo configuraremos en el siguiente paso
     // private lateinit var googleSignInButton: com.google.android.gms.common.SignInButton
 
+    //  Componentes para Google Sign-In
+    private lateinit var googleSignInClient: GoogleSignInClient
+    private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
+    private lateinit var googleSignInButton: SignInButton
+    // -------------------------------------------------------------
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,14 +56,14 @@ class LoginActivity : AppCompatActivity() {
         // 1- Inicar firebase auth
         auth = Firebase.auth
 
-        // 2- Inicializar vistas
+        // 1.2- Inicializar vistas
         emailEditText = findViewById(R.id.editTextLoginEmail)
         passwordEditText = findViewById(R.id.editTextLoginPassword)
         loginButton = findViewById(R.id.buttonLoginEmail)
         registerButton = findViewById(R.id.buttonRegisterEmail)
         // googleSignInButton = findViewById(R.id.buttonGoogleSignIn)
 
-        // 3- Configurar listener para el boton de registro
+        // 1.3- Configurar listener para el boton de registro
         registerButton.setOnClickListener{
             val email = emailEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
@@ -82,7 +98,7 @@ class LoginActivity : AppCompatActivity() {
                 }
         }
 
-        // 4- Configurar listener para el boton de login
+        // 1.4- Configurar listener para el boton de login
         loginButton.setOnClickListener{
             val email = emailEditText.text.toString().trim()
             val password = passwordEditText.text.toString().trim()
@@ -115,8 +131,38 @@ class LoginActivity : AppCompatActivity() {
                 }
         }
 
-    }
-    // -5 Comprobar si el usuario ya esta conectado al iniciar la activity
+        // --- Configuración de Google Sign-In---
+        // 2. Configurar el ActivityResultLauncher
+        googleSignInLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val task = GoogleSignIn.getSignedInAccountFromIntent(result.data)
+                handleGoogleSignInResultTask(task)
+            } else {
+                Log.w(TAG, "Google Sign In (clásico) cancelado o fallido. ResultCode: ${result.resultCode}")
+                Toast.makeText(this, "Inicio de sesión con Google cancelado.", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // 2.1 Configurar GoogleSignInOptions para solicitar ID Token y email.
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id))
+            .requestEmail()
+            .build()
+
+        // 2.3 Construir un GoogleSignInClient con las opciones especificadas.
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
+        // 2.4 Configurar el listener para el botón de Google Sign-In
+        googleSignInButton = findViewById(R.id.buttonGoogleSignIn)
+        googleSignInButton.setOnClickListener {
+            Log.d(TAG, "Botón Google Sign-In (clásico) presionado")
+            val signInIntent = googleSignInClient.signInIntent
+            googleSignInLauncher.launch(signInIntent)
+        }
+    } // Fin de onCreate
+
+
+    // -1.5 Comprobar si el usuario ya esta conectado al iniciar la activity
     override fun onStart() {
         super.onStart()
         val currentUser = auth.currentUser
@@ -126,6 +172,42 @@ class LoginActivity : AppCompatActivity() {
         }else  {
             Log.d(TAG, "No hay usuario conectado.")
         }
+    }
+
+    // 2.5--- Manejador para el resultado de Google Sign-In (versión "clásica") ---
+    private fun handleGoogleSignInResultTask(completedTask: Task<GoogleSignInAccount>) {
+        try {
+            val account = completedTask.getResult(ApiException::class.java)
+            // Inicio de sesión con Google exitoso, ahora autentica con Firebase
+            Log.d(TAG, "Google Sign-In (clásico) exitoso, cuenta: ${account?.email}")
+            firebaseAuthWithGoogle(account?.idToken) // Pasa el ID token
+        } catch (e: ApiException) {
+            // Google Sign In falló
+            Log.w(TAG, "Google Sign-In (clásico) fallido, código de APIException: ${e.statusCode}", e)
+            Toast.makeText(this, "Fallo al iniciar sesión con Google: ${e.statusCode}", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // 2.6 Función para autenticar con Firebase usando el ID Token de Google
+    private fun firebaseAuthWithGoogle(idToken: String?) {
+        if (idToken == null) {
+            Toast.makeText(this, "No se pudo obtener el token de Google.", Toast.LENGTH_SHORT).show()
+            Log.w(TAG, "Google ID Token es nulo")
+            return
+        }
+        val credential = GoogleAuthProvider.getCredential(idToken, null)
+        auth.signInWithCredential(credential)
+            .addOnCompleteListener(this) { task ->
+                if (task.isSuccessful) {
+                    Log.d(TAG, "Firebase signInWithGoogle:success")
+                    val user = auth.currentUser
+                    Toast.makeText(this, "Bienvenido ${user?.displayName ?: user?.email}", Toast.LENGTH_SHORT).show()
+                    navigateToMain()
+                } else {
+                    Log.w(TAG, "Firebase signInWithGoogle:failure", task.exception)
+                    Toast.makeText(this, "Fallo de autenticación con Firebase/Google: ${task.exception?.message}", Toast.LENGTH_LONG).show()
+                }
+            }
     }
 
     fun navigateToMain(){
