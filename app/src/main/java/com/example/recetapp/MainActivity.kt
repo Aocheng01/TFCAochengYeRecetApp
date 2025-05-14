@@ -1,13 +1,13 @@
 package com.example.recetapp
 
-import android.content.Context // Importar Context
+import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.view.inputmethod.InputMethodManager // Importar InputMethodManager
-import android.widget.Button // Importar Button
-import android.widget.EditText // Importar EditText
+import android.view.inputmethod.InputMethodManager
+import android.widget.Button
+import android.widget.EditText
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.adapters.RecipeAdapter
@@ -18,65 +18,98 @@ import com.google.firebase.auth.FirebaseAuth
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import android.view.View
+import android.widget.Toast
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.auth.ktx.auth
 
 class MainActivity : AppCompatActivity() {
 
     private val TAG = "MainActivity"
-
-    //Instancia de Firebase Authentication
     private lateinit var auth: FirebaseAuth
 
-    // Referencias a las vistas
     private lateinit var recyclerView: RecyclerView
     private lateinit var recipeAdapter: RecipeAdapter
-    private lateinit var editTextSearchQuery: EditText // Referencia al EditText
-    private lateinit var buttonSearch: Button         // Referencia al Button
-    private lateinit var buttonLogout: Button         // Referencia al Button
+    private lateinit var editTextSearchQuery: EditText
+    private lateinit var buttonSearch: Button
+    private lateinit var buttonLogout: Button
+    private lateinit var buttonLoadMore: Button
+
+    private var nextPageUrl: String? = null
+    private var isLoading = false
+    private var currentQuery: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // --- Inicializar Vistas ---
+        auth = Firebase.auth
+
         recyclerView = findViewById(R.id.recyclerViewRecipes)
-        editTextSearchQuery = findViewById(R.id.editTextSearchQuery) // Busca el EditText
-        buttonSearch = findViewById(R.id.buttonSearch)             // Busca el Button
-        buttonLogout = findViewById(R.id.buttonLogout)             // Busca el Button
-        auth = FirebaseAuth.getInstance()
-        // --- Configuración del RecyclerView (igual que antes) ---
-        recipeAdapter = RecipeAdapter(emptyList())
+        editTextSearchQuery = findViewById(R.id.editTextSearchQuery)
+        buttonSearch = findViewById(R.id.buttonSearch)
+        buttonLogout = findViewById(R.id.buttonLogout)
+        buttonLoadMore = findViewById(R.id.buttonLoadMore)
+
+        recipeAdapter = RecipeAdapter(mutableListOf())
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = recipeAdapter
 
-        // --- Configuración del Listener del Botón ---
         buttonSearch.setOnClickListener {
-            val query = editTextSearchQuery.text.toString().trim() // Obtiene el texto y quita espacios extra
-            if (query.isNotBlank()) { // Verifica que no esté vacío
+            val query = editTextSearchQuery.text.toString().trim()
+            if (query.isNotBlank()) {
                 Log.d(TAG, "Botón presionado, buscando: $query")
-                searchRecipesApi(query) // Llama a la API con la búsqueda del usuario
-                hideKeyboard() // Oculta el teclado después de buscar
+                currentQuery = query
+                nextPageUrl = null
+                recipeAdapter.submitNewList(emptyList())
+                buttonLoadMore.visibility = View.GONE // Oculta al iniciar nueva búsqueda
+                searchRecipesApi(query, true)
+                hideKeyboard()
             } else {
                 Log.d(TAG, "Intento de búsqueda con campo vacío.")
-                // Opcional: Mostrar mensaje al usuario que debe escribir algo
             }
         }
 
-        //Listener boton logout
+        buttonLoadMore.setOnClickListener {
+            if (!isLoading && nextPageUrl != null) {
+                Log.d(TAG, "Botón Cargar Más presionado. URL: $nextPageUrl")
+                buttonLoadMore.visibility = View.GONE // Oculta para evitar doble clic
+                searchRecipesApi(nextPageUrl!!, false)
+            }
+        }
+
         buttonLogout.setOnClickListener {
             Log.d(TAG, "Botón de logout presionado.")
-            // Lógica para cerrar sesión
             auth.signOut()
-
-            // Navegar a la actividad de inicio de sesión
+            Toast.makeText(this, "Sesión cerrada.", Toast.LENGTH_SHORT).show()
             val intent = Intent(this, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK // Limpia la pila de actividades
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
             finish()
-
         }
+
+        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0 || (recyclerView.layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition() == recipeAdapter.itemCount - 1) {
+                    updateLoadMoreButtonVisibility()
+                }
+            }
+        })
+
+        if (auth.currentUser == null && !isFinishing) {
+            Log.w(TAG, "¡Alerta! Usuario no logueado en MainActivity, volviendo a Login.")
+            navigateToLogin()
+        }
+    } // Fin de onCreate
+
+    private fun navigateToLogin() {
+        val intent = Intent(this, LoginActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 
-    // Función para ocultar el teclado (útil)
     private fun hideKeyboard() {
         val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         val currentFocusedView = this.currentFocus
@@ -85,42 +118,97 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    // --- updateLoadMoreButtonVisibility AHORA ES UN MÉTODO DE LA CLASE MainActivity ---
+    private fun updateLoadMoreButtonVisibility() {
+        if (isLoading) {
+            buttonLoadMore.visibility = View.GONE
+            return
+        }
 
-    private fun searchRecipesApi(query: String) {
-        Log.d(TAG, "Iniciando búsqueda de recetas para: $query")
+        if (nextPageUrl != null) {
+            val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
+            if (layoutManager != null) {
+                val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition()
+                val totalItemCount = recipeAdapter.itemCount
+
+                if (totalItemCount > 0 && lastVisibleItemPosition == totalItemCount - 1) {
+                    buttonLoadMore.visibility = View.VISIBLE
+                    Log.d(TAG, "Botón Cargar Más: VISIBLE (al final y hay más páginas)")
+                } else {
+                    buttonLoadMore.visibility = View.GONE
+                    // Log.d(TAG, "Botón Cargar Más: OCULTO (no al final o lista vacía aún)")
+                }
+            }
+        } else {
+            buttonLoadMore.visibility = View.GONE
+            Log.d(TAG, "Botón Cargar Más: OCULTO (no hay más páginas url)")
+        }
+    }
+
+    private fun searchRecipesApi(queryOrUrl: String, isInitialSearch: Boolean) {
+        if (isLoading) return
+        isLoading = true
+        if (isInitialSearch) {
+            buttonLoadMore.visibility = View.GONE
+        }
+        // TODO: Mostrar ProgressBar aquí
+
         val apiService = RetrofitClient.instance
-        val call: Call<RecipeResponse> = apiService.searchRecipes(query = query)
+        val call: Call<RecipeResponse>
 
-        // TODO: (Siguiente paso) Mostrar ProgressBar aquí
+        if (isInitialSearch) {
+            Log.d(TAG, "Iniciando búsqueda INICIAL para: $queryOrUrl")
+            call = apiService.searchRecipes(query = queryOrUrl)
+        } else {
+            Log.d(TAG, "Cargando SIGUIENTE PÁGINA desde: $queryOrUrl")
+            call = apiService.getNextPageRecipes(nextPageUrl = queryOrUrl)
+        }
 
         call.enqueue(object : Callback<RecipeResponse> {
             override fun onResponse(call: Call<RecipeResponse>, response: Response<RecipeResponse>) {
-                // TODO: (Siguiente paso) Ocultar ProgressBar aquí
+                isLoading = false
+                // TODO: Ocultar ProgressBar aquí
 
                 if (response.isSuccessful) {
                     val recipeResponse = response.body()
-                    val hits = recipeResponse?.hits ?: emptyList()
-                    if (hits.isNotEmpty()) {
-                        Log.d(TAG, "Recetas encontradas: ${hits.size}")
-                        recipeAdapter.updateRecipes(hits)
+                    val newHits = recipeResponse?.hits ?: emptyList()
+
+                    if (isInitialSearch) {
+                        recipeAdapter.submitNewList(newHits)
                     } else {
-                        Log.d(TAG, "No se encontraron recetas para '$query'. Código: ${response.code()}")
-                        recipeAdapter.updateRecipes(emptyList())
-                        // TODO: (Siguiente paso) Mostrar mensaje "No hay resultados"
+                        recipeAdapter.addRecipes(newHits)
+                    }
+                    Log.d(TAG, (if(isInitialSearch) "Búsqueda inicial" else "Paginación") + ": ${newHits.size} recetas.")
+
+                    nextPageUrl = recipeResponse?.links?.next?.href
+                    updateLoadMoreButtonVisibility() // Llamar aquí para actualizar visibilidad
+
+                    if (nextPageUrl == null && !isInitialSearch && newHits.isEmpty() && recipeAdapter.itemCount > 0) {
+                        Toast.makeText(this@MainActivity, "No hay más recetas para cargar.", Toast.LENGTH_SHORT).show()
+                    }
+                    if (isInitialSearch && newHits.isEmpty()) {
+                        Toast.makeText(this@MainActivity, "No se encontraron recetas para '$currentQuery'.", Toast.LENGTH_SHORT).show()
                     }
                 } else {
-                    Log.e(TAG, "Error en la respuesta de la API: Código: ${response.code()}, Mensaje: ${response.message()}")
-                    recipeAdapter.updateRecipes(emptyList())
-                    // TODO: (Siguiente paso) Mostrar mensaje de error API
+                    Log.e(TAG, "Error API: ${response.code()} - ${response.message()}")
+                    nextPageUrl = null
+                    updateLoadMoreButtonVisibility()
+                    Toast.makeText(this@MainActivity, "Error de API: ${response.code()}", Toast.LENGTH_SHORT).show()
                 }
             }
 
             override fun onFailure(call: Call<RecipeResponse>, t: Throwable) {
-                // TODO: (Siguiente paso) Ocultar ProgressBar aquí
+                isLoading = false
+                // TODO: Ocultar ProgressBar aquí
                 Log.e(TAG, "Fallo en la llamada a la API: ${t.message}", t)
-                recipeAdapter.updateRecipes(emptyList())
-                // TODO: (Siguiente paso) Mostrar mensaje de error de red
+                nextPageUrl = null
+                updateLoadMoreButtonVisibility()
+                Toast.makeText(this@MainActivity, "Error de red.", Toast.LENGTH_SHORT).show()
             }
-        })
-    }
-}
+        }) // Fin de call.enqueue
+    } // Fin de searchRecipesApi
+
+    // --- ELIMINÉ LAS FUNCIONES handleSignWithGoogleCredential, firebaseAuthWithGoogle Y EL onStart DUPLICADO DE AQUÍ ---
+    // --- ESAS FUNCIONES PERTENECEN A LoginActivity.kt ---
+
+} // Fin de MainActivity

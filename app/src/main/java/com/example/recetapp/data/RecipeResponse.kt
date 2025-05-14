@@ -1,8 +1,11 @@
 package com.example.recetapp.data
 
-// Representa la respuesta completa de la API de búsqueda
+import com.google.gson.annotations.SerializedName
+
 data class RecipeResponse(
-    // @SerializedName("_links") // Descomenta si necesitas los enlaces de paginación
-    // val links: Links?,
-    val hits: List<Hit>? // La lista de recetas encontradas
+    val from: Int?,
+    val to: Int?,
+    val count: Int?, // Total de recetas que coinciden (puede ser > que las que se pueden obtener)
+    @SerializedName("_links") val links: com.example.recetapp.data.Links?, // Importante para paginación
+    val hits: List<Hit>?
 )

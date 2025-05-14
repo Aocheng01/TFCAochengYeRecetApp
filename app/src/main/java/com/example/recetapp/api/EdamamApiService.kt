@@ -5,6 +5,7 @@ import com.example.recetapp.data.RecipeResponse // Asegúrate que la ruta sea co
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
+import retrofit2.http.Url
 
 interface EdamamApiService {
 
@@ -35,28 +36,10 @@ interface EdamamApiService {
 
     ): Call<RecipeResponse> // Devuelve un objeto Call que Retrofit puede ejecutar
 
-    // --- Alternativa con Coroutines ---
-    /*
-    @GET("api/recipes/v2")
-    suspend fun searchRecipesSuspend(
-        @Query("type") type: String = API_TYPE,
-        @Query("q") query: String,
-        @Query("app_id") appId: String,
-        @Query("app_key") appKey: String,
-        @Query("imageSize") imageSize: String = "REGULAR"
-        // ... otros parámetros
-    ): Response<RecipeResponse> // O directamente RecipeResponse si manejas errores/nulos de otra forma
-    */
 
 
-    // Podrías añadir aquí otros endpoints si los necesitas, por ejemplo, para obtener una receta por su URI:
-    /*
-    @GET("api/recipes/v2/{id}") // id sería el hash que viene en la URI de la receta
-    fun getRecipeByUri(
-        @Path("id") recipeId: String,
-        @Query("type") type: String = API_TYPE,
-        @Query("app_id") appId: String,
-        @Query("app_key") appKey: String
-    ): Call<RecipeResponse> // La respuesta puede ser ligeramente diferente, ajusta RecipeResponse si es necesario
-    */
+    @GET // No se especifica un endpoint aquí porque la URL vendrá completa
+    fun getNextPageRecipes(@Url nextPageUrl: String): Call<RecipeResponse>
+    // El interceptor seguirá añadiendo Edamam-Account-User.
+    // app_id y app_key ya vienen en la nextPageUrl que proporciona Edamam.
 }

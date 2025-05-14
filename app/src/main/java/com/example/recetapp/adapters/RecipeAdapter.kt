@@ -10,7 +10,7 @@ import coil.load // <--- IMPORTANTE: Importa la función 'load' de Coil
 import com.example.recetapp.R
 import com.example.recetapp.data.Hit
 
-class RecipeAdapter(private var recipes: List<Hit>) : RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder>() {
+class RecipeAdapter(private var recipes: MutableList<Hit>) : RecyclerView.Adapter<RecipeAdapter.RecipeViewHolder>() { // Cambiado a MutableList
 
     class RecipeViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val nameTextView: TextView = itemView.findViewById(R.id.textViewRecipeName)
@@ -19,7 +19,7 @@ class RecipeAdapter(private var recipes: List<Hit>) : RecyclerView.Adapter<Recip
         val recipeImageView: ImageView = itemView.findViewById(R.id.imageViewRecipe) // <--- AÑADE ESTO
     }
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecipeViewHolder {
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecipeViewHolder { // Asegúrate que esto está bien
         val itemView = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_recipe, parent, false)
         return RecipeViewHolder(itemView)
@@ -49,8 +49,21 @@ class RecipeAdapter(private var recipes: List<Hit>) : RecyclerView.Adapter<Recip
         return recipes.size
     }
 
-    fun updateRecipes(newRecipes: List<Hit>) {
-        this.recipes = newRecipes
-        notifyDataSetChanged()
+    /**
+     * Reemplaza la lista actual. Usar para una nueva búsqueda.
+     */
+    fun submitNewList(newRecipes: List<Hit>) {
+        this.recipes.clear()
+        this.recipes.addAll(newRecipes)
+        notifyDataSetChanged() // Para una lista completamente nueva, esto está bien por ahora
+    }
+
+    /**
+     * Añade nuevas recetas al final de la lista existente. Usar para paginación.
+     */
+    fun addRecipes(newRecipes: List<Hit>) {
+        val startPosition = this.recipes.size
+        this.recipes.addAll(newRecipes)
+        notifyItemRangeInserted(startPosition, newRecipes.size)
     }
 }
