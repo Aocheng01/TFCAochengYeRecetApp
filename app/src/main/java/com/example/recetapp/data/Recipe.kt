@@ -1,7 +1,11 @@
 package com.example.recetapp.data
 
 import com.google.gson.annotations.SerializedName
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
 
+
+@Parcelize
 // Representa la información detallada de una receta
 data class Recipe(
     val uri: String?, // Identificador único de la receta
@@ -26,4 +30,4 @@ data class Recipe(
     val totalNutrients: NutrientsInfo? // Información nutricional detallada
     // val totalDaily: NutrientsInfo? // Porcentaje diario de nutrientes
     // val digest: List<DigestInfo>? // Información de digestión por nutriente
-)
+) : Parcelable

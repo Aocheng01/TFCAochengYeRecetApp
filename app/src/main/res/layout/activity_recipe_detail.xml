@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".RecipeDetailActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <ImageView
+            android:id="@+id/imageViewRecipeDetail"
+            android:layout_width="match_parent"
+            android:layout_height="250dp"
+            android:scaleType="centerCrop"
+            tools:srcCompat="@drawable/ic_placeholder_image"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/textViewRecipeLabelDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            tools:text="Nombre de la Receta Detalle"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:id="@+id/textViewRecipeSourceDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            tools:text="Fuente: Edamam"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/textViewRecipeUrlDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:autoLink="web" tools:text="http://www.example.com"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Ingredientes:"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/textViewIngredientsDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            tools:text=" - 1 taza de harina\n - 2 huevos\n - Pizca de sal"
+            android:layout_marginBottom="16dp"/>
+
+        <TextView
+            android:id="@+id/textViewCaloriesDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            tools:text="Calorías: 500 kcal"
+            android:layout_marginBottom="4dp"/>
+
+        <TextView
+            android:id="@+id/textViewYieldDetail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            tools:text="Porciones: 4"
+            android:layout_marginBottom="16dp"/>
+
+    </LinearLayout>
+</ScrollView>

@@ -1,14 +1,19 @@
-package com.example.recetapp.data
+// En tu archivo Ingredient.kt
+package com.example.recetapp.data // O tu paquete
 
-import com.google.gson.annotations.SerializedName
+import android.os.Parcelable
+import kotlinx.parcelize.Parcelize
+// ... otras importaciones si las tiene ...
 
+@Parcelize
 data class Ingredient(
-    val text: String?, // Descripción completa (ej. "1 large egg")
+    // ... los campos de tu clase Ingredient ...
+    val text: String?,
     val quantity: Double?,
-    val measure: String?, // Unidad (ej. "cup", "tablespoon", null si es unidad como "large")
-    val food: String?, // Nombre del alimento (ej. "egg")
-    val weight: Double?, // Peso en gramos
-    val foodCategory: String?, // Categoría (ej. "Eggs")
+    val measure: String?,
+    val food: String?,
+    val weight: Double?,
+    val foodCategory: String?,
     val foodId: String?,
-    val image: String? // URL de imagen del ingrediente (puede no estar)
-)
+    val image: String?
+) : Parcelable

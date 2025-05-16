@@ -4,81 +4,127 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="24dp"
-    tools:context=".LoginActivity">
+    android:background="?attr/colorSurfaceContainerLowest" android:padding="16dp" tools:context=".LoginActivity">
+
+    <ImageView
+        android:id="@+id/imageViewAppLogo" android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="48dp"
+        android:contentDescription="@string/app_logo_description" app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:srcCompat="@mipmap/ic_launcher_round" /> <TextView
+    android:id="@+id/textViewLoginTitle" android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="24dp"
+    android:text="Bienvenido a RecetApp" android:textAppearance="?attr/textAppearanceHeadlineSmall"
+    android:textColor="?attr/colorOnSurface"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintTop_toBottomOf="@+id/imageViewAppLogo" />
 
     <TextView
-        android:id="@+id/textViewLoginTitle"
-        android:layout_width="wrap_content"
+        android:id="@+id/textViewLoginSubtitle" android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="32dp"
-        android:text="Iniciar Sesión / Registro"
-        android:textSize="24sp"
-        android:textStyle="bold"
+        android:layout_marginTop="8dp"
+        android:text="Inicia sesión o regístrate para explorar recetas"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewLoginTitle" />
 
-    <EditText
-        android:id="@+id/editTextLoginEmail"
-        android:layout_width="361dp"
-        android:layout_height="48dp"
-        android:layout_marginTop="32dp"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textFieldLayoutEmail" style="?attr/textInputFilledStyle" android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
         android:hint="Correo Electrónico"
-        android:inputType="textEmailAddress"
+        app:errorEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewLoginTitle" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewLoginSubtitle">
 
-    <EditText
-        android:id="@+id/editTextLoginPassword"
-        android:layout_width="358dp"
-        android:layout_height="48dp"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextLoginEmail" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textEmailAddress" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/textFieldLayoutPassword" style="?attr/textInputFilledStyle" android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
+        android:layout_marginEnd="24dp"
         android:hint="Contraseña"
-        android:inputType="textPassword"
+        app:errorEnabled="true"
+        app:passwordToggleEnabled="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editTextLoginEmail" />
+        app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutEmail">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTextLoginPassword" android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword" />
+    </com.google.android.material.textfield.TextInputLayout>
 
     <Button
-        android:id="@+id/buttonLoginEmail"
-        android:layout_width="0dp"
+        android:id="@+id/buttonLoginEmail" android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
-        android:text="Iniciar Sesión (Email)"
+        android:layout_marginEnd="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="Iniciar Sesión"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/editTextLoginPassword" />
+        app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutPassword" />
 
     <Button
-        android:id="@+id/buttonRegisterEmail"
-        style="?attr/materialButtonOutlinedStyle"
+        android:id="@+id/buttonRegisterEmail" style="?attr/materialButtonOutlinedStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="Registrarse (Email)"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="24dp"
+        android:paddingTop="12dp"
+        android:paddingBottom="12dp"
+        android:text="Registrarse"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonLoginEmail" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonLoginEmail" />
 
     <TextView
-        android:id="@+id/textViewOr"
-        android:layout_width="wrap_content"
+        android:id="@+id/textViewOr" android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:text="o"
+        android:layout_marginTop="20dp"
+        android:text="o inicia sesión con"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/buttonRegisterEmail" />
+        app:layout_constraintTop_toBottomOf="@+id/buttonRegisterEmail" />
 
     <com.google.android.gms.common.SignInButton
-        android:id="@+id/buttonGoogleSignIn"
-        android:layout_width="0dp"
+        android:id="@+id/buttonGoogleSignIn" android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="12dp"
+        android:layout_marginEnd="24dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/textViewOr" />
+        app:layout_constraintTop_toBottomOf="@+id/textViewOr" />
+
+    <Space
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/buttonGoogleSignIn"
+        app:layout_constraintStart_toStartOf="parent"
+        android:layout_marginTop="24dp"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
