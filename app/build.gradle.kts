@@ -80,4 +80,8 @@ dependencies {
     // Dependencia para Google Sign-In (Necesaria para el login con Google)
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
+    //dependencias para viewpager2
+    implementation("androidx.viewpager2:viewpager2:1.1.0") // O la última versión estable
+    implementation("com.google.android.material:material:1.12.0") // O la última versión estable (para TabLayout)
+
 }
