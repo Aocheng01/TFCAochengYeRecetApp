@@ -6,13 +6,16 @@ import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.example.recetapp.R // Asegúrate que esta importación sea correcta
+import com.example.recetapp.R
+
+// Modelo de datos simple para el item de la despensa (podría ser más complejo)
+data class PantryItem(val id: String, val name: String) // id será el documentId de Firestore
 
 class PantryAdapter(
-    private val pantryItems: MutableList<String>, // Lista de nombres de ingredientes
-    private val onSearchClick: (ingredient: String) -> Unit,
-    private val onAddToShoppingListClick: (ingredient: String) -> Unit,
-    private val onDeleteClick: (ingredient: String, position: Int) -> Unit
+    private val pantryItemsList: MutableList<PantryItem>,
+    private val onSearchClick: (ingredientName: String) -> Unit,
+    private val onAddToShoppingListClick: (ingredientName: String) -> Unit,
+    private val onDeleteClick: (pantryItem: PantryItem, position: Int) -> Unit
 ) : RecyclerView.Adapter<PantryAdapter.PantryViewHolder>() {
 
     inner class PantryViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -21,23 +24,22 @@ class PantryAdapter(
         val addToShoppingListButton: ImageButton = itemView.findViewById(R.id.buttonAddToShoppingList)
         val deleteButton: ImageButton = itemView.findViewById(R.id.buttonDeletePantryItem)
 
-        fun bind(ingredientName: String, position: Int) {
-            itemNameTextView.text = ingredientName
+        fun bind(item: PantryItem) {
+            itemNameTextView.text = item.name
 
             searchButton.setOnClickListener {
-                // Solo llama si la posición es válida (evita problemas si el item se elimina rápidamente)
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onSearchClick(pantryItems[adapterPosition])
+                    onSearchClick(pantryItemsList[adapterPosition].name)
                 }
             }
             addToShoppingListButton.setOnClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onAddToShoppingListClick(pantryItems[adapterPosition])
+                    onAddToShoppingListClick(pantryItemsList[adapterPosition].name)
                 }
             }
             deleteButton.setOnClickListener {
                 if (adapterPosition != RecyclerView.NO_POSITION) {
-                    onDeleteClick(pantryItems[adapterPosition], adapterPosition)
+                    onDeleteClick(pantryItemsList[adapterPosition], adapterPosition)
                 }
             }
         }
@@ -50,32 +52,40 @@ class PantryAdapter(
     }
 
     override fun onBindViewHolder(holder: PantryViewHolder, position: Int) {
-        holder.bind(pantryItems[position], position)
+        holder.bind(pantryItemsList[position])
     }
 
-    override fun getItemCount(): Int = pantryItems.size
+    override fun getItemCount(): Int = pantryItemsList.size
 
-    fun addItem(item: String) {
-        pantryItems.add(item)
-        notifyItemInserted(pantryItems.size - 1)
+    // Reemplaza la lista entera (usado al cargar desde Firestore)
+    fun submitList(newItems: List<PantryItem>) {
+        pantryItemsList.clear()
+        pantryItemsList.addAll(newItems)
+        notifyDataSetChanged() // Podría optimizarse con DiffUtil
     }
+
+    // Añade un solo item (usado después de añadir a Firestore y obtener confirmación o ID)
+    // Esta función podría no ser necesaria si siempre recargas la lista completa desde Firestore
+    // o si Firestore te devuelve el item añadido para insertarlo localmente.
+    // Por ahora, la comentaremos y nos basaremos en recargar la lista.
+    /*
+    fun addItem(item: PantryItem) {
+        pantryItemsList.add(item)
+        notifyItemInserted(pantryItemsList.size - 1)
+    }
+    */
 
     fun removeItem(position: Int) {
-        if (position >= 0 && position < pantryItems.size) {
-            pantryItems.removeAt(position)
+        if (position >= 0 && position < pantryItemsList.size) {
+            pantryItemsList.removeAt(position)
             notifyItemRemoved(position)
-            // Es importante notificar el cambio de rango si las posiciones de otros items se ven afectadas
-            if (position < pantryItems.size) { // Si no era el último item
-                notifyItemRangeChanged(position, pantryItems.size - position)
+            if (position < pantryItemsList.size) {
+                notifyItemRangeChanged(position, pantryItemsList.size - position)
             }
         }
     }
 
-    fun getItems(): List<String> {
-        return pantryItems.toList() // Devuelve una copia para evitar modificaciones externas
-    }
-
     fun isEmpty(): Boolean {
-        return pantryItems.isEmpty()
+        return pantryItemsList.isEmpty()
     }
 }

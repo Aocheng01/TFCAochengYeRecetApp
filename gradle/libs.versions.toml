@@ -11,7 +11,8 @@ activity = "1.10.0"
 constraintlayout = "2.2.0"
 retrofit = "2.9.0" # O una versión más reciente y estable
 gson = "2.9.0"
-runtimeAndroid = "1.8.1" # O una versión más reciente y estable (puede ser diferente a Retrofit)
+runtimeAndroid = "1.8.1"
+firebaseFirestoreKtx = "25.1.4" # O una versión más reciente y estable (puede ser diferente a Retrofit)
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -24,7 +25,8 @@ androidx-activity = { group = "androidx.activity", name = "activity", version.re
 androidx-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit" }
 converter-gson = { module = "com.squareup.retrofit2:converter-gson", version.ref = "retrofit" }
-androidx-runtime-android = { group = "androidx.compose.runtime", name = "runtime-android", version.ref = "runtimeAndroid" } # Usa la misma versión que retrofit
+androidx-runtime-android = { group = "androidx.compose.runtime", name = "runtime-android", version.ref = "runtimeAndroid" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" } # Usa la misma versión que retrofit
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
