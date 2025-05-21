@@ -1,4 +1,4 @@
-package com.example.recetapp
+package com.example.recetapp.fragments // O tu paquete
 
 import android.content.Context
 import android.content.Intent
@@ -12,13 +12,18 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import androidx.fragment.app.activityViewModels // Importa para by activityViewModels()
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.example.recetapp.LoginActivity // Importa LoginActivity
+import com.example.recetapp.R
+import com.example.recetapp.RecipeDetailActivity // Importa RecipeDetailActivity
 import com.example.recetapp.adapters.RecipeAdapter
 import com.example.recetapp.api.RetrofitClient
 import com.example.recetapp.data.Hit
 import com.example.recetapp.data.Recipe
 import com.example.recetapp.data.RecipeResponse
+import com.example.recetapp.viewmodels.SearchViewModel // Importa tu SearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.auth.ktx.auth
@@ -31,7 +36,6 @@ class SearchRecipesFragment : Fragment() {
     private val TAG = "SearchRecipesFragment"
     private lateinit var auth: FirebaseAuth
 
-    // Vistas UI (IDs de fragment_search_recipes.xml)
     private lateinit var recyclerView: RecyclerView
     private lateinit var recipeAdapter: RecipeAdapter
     private lateinit var editTextSearchQuery: EditText
@@ -39,16 +43,17 @@ class SearchRecipesFragment : Fragment() {
     private lateinit var buttonLogout: Button
     private lateinit var buttonLoadMore: Button
 
-    // Variables para paginación
     private var nextPageUrl: String? = null
     private var isLoading = false
-    private var currentQuery: String = ""
+    private var currentQuery: String = "" // Para evitar búsquedas duplicadas si la query no cambia
+
+    // Obtiene la instancia del SharedViewModel (scoped to Activity)
+    private val searchViewModel: SearchViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // Infla el layout para este fragment
         return inflater.inflate(R.layout.fragment_search_recipes, container, false)
     }
 
@@ -57,83 +62,92 @@ class SearchRecipesFragment : Fragment() {
 
         auth = Firebase.auth
 
-        // Inicializar Vistas usando 'view.findViewById'
-        // Los IDs son los mismos que tenías en tu activity_main.xml original
         recyclerView = view.findViewById(R.id.recyclerViewRecipes)
         editTextSearchQuery = view.findViewById(R.id.editTextSearchQuery)
         buttonSearch = view.findViewById(R.id.buttonSearch)
         buttonLogout = view.findViewById(R.id.buttonLogout)
         buttonLoadMore = view.findViewById(R.id.buttonLoadMore)
 
-        // Configuración del RecyclerView
         recipeAdapter = RecipeAdapter(mutableListOf()) { clickedRecipe ->
             openRecipeDetail(clickedRecipe)
         }
-        // Usa requireContext() para obtener el Context en un Fragment
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = recipeAdapter
 
-        // ----- AQUÍ MOVERÁS LOS LISTENERS Y FUNCIONES DE MainActivity -----
-        // Por ejemplo:
-        // buttonSearch.setOnClickListener { ... }
-        // buttonLoadMore.setOnClickListener { ... }
-        // buttonLogout.setOnClickListener { ... }
-        // recyclerView.addOnScrollListener( ... )
-        // Y las funciones: searchRecipesApi, updateLoadMoreButtonVisibility, hideKeyboard, openRecipeDetail
-        // Asegúrate de adaptar el contexto (usar requireContext() o activity)
-        // y la forma de obtener el inputMethodManager.
-        // ----- FIN DE LA SECCIÓN A MOVER -----
-
-        // Ejemplo de cómo adaptar el listener de logout:
-        buttonLogout.setOnClickListener {
-            Log.d(TAG, "Botón de logout presionado en Fragment.")
-            auth.signOut()
-            Toast.makeText(requireContext(), "Sesión cerrada.", Toast.LENGTH_SHORT).show()
-            // Para navegar desde un Fragment, usualmente obtienes la Activity
-            val intent = Intent(activity, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            activity?.finish() // Cierra la MainActivity contenedora
+        buttonSearch.setOnClickListener {
+            performSearchFromInput()
         }
 
-        // Ejemplo de cómo adaptar el listener de búsqueda:
-        buttonSearch.setOnClickListener {
-            val query = editTextSearchQuery.text.toString().trim()
-            if (query.isNotBlank()) {
-                Log.d(TAG, "Botón presionado en Fragment, buscando: $query")
-                currentQuery = query
-                nextPageUrl = null
-                recipeAdapter.submitNewList(emptyList())
-                buttonLoadMore.visibility = View.GONE
-                searchRecipesApi(query, true) // Esta función la moverás aquí
-                hideKeyboard() // Esta función la moverás aquí
+        // Permitir búsqueda al pulsar "Enter" en el teclado
+        editTextSearchQuery.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+                performSearchFromInput()
+                true
             } else {
-                Toast.makeText(requireContext(), "Introduce un término de búsqueda.", Toast.LENGTH_SHORT).show()
+                false
             }
         }
 
         buttonLoadMore.setOnClickListener {
             if (!isLoading && nextPageUrl != null) {
-                Log.d(TAG, "Botón Cargar Más presionado en Fragment. URL: $nextPageUrl")
                 buttonLoadMore.visibility = View.GONE
-                searchRecipesApi(nextPageUrl!!, false) // Esta función la moverás aquí
+                searchRecipesApi(nextPageUrl!!, false)
             }
+        }
+
+        buttonLogout.setOnClickListener {
+            Log.d(TAG, "Botón de logout presionado en Fragment.")
+            auth.signOut()
+            // (Opcional) Google Sign Out si lo implementaste
+            // val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
+            // GoogleSignIn.getClient(requireActivity(), gso).signOut()
+
+            Toast.makeText(requireContext(), "Sesión cerrada.", Toast.LENGTH_SHORT).show()
+            val intent = Intent(activity, LoginActivity::class.java)
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            startActivity(intent)
+            activity?.finish()
         }
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
                 if (dy > 0 || (recyclerView.layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition() == recipeAdapter.itemCount - 1) {
-                    updateLoadMoreButtonVisibility() // Esta función la moverás aquí
+                    updateLoadMoreButtonVisibility()
                 }
             }
         })
+
+        // --- Observar el LiveData del ViewModel ---
+        searchViewModel.navigateToSearchQuery.observe(viewLifecycleOwner) { query ->
+            if (query != null && query.isNotBlank()) {
+                Log.d(TAG, "SearchRecipesFragment: Recibida query del ViewModel: $query")
+                editTextSearchQuery.setText(query) // Pone la query en el EditText
+                performSearch(query) // Realiza la búsqueda
+                searchViewModel.onSearchQueryNavigated() // Limpia la query para evitar re-búsquedas
+            }
+        }
     }
 
-    // ----- COPIA Y PEGA TUS FUNCIONES DE MainActivity AQUÍ Y ADÁPTALAS -----
-    // openRecipeDetail, hideKeyboard, updateLoadMoreButtonVisibility, searchRecipesApi
-    // Recuerda cambiar 'this' por 'requireContext()' o 'activity' donde sea necesario.
-    // Y 'findViewById' por 'view.findViewById' si accedes a vistas dentro de estas funciones.
+    private fun performSearchFromInput() {
+        val query = editTextSearchQuery.text.toString().trim()
+        performSearch(query)
+    }
+
+    private fun performSearch(query: String) {
+        if (query.isNotBlank()) {
+            Log.d(TAG, "Iniciando búsqueda desde Fragment: $query")
+            currentQuery = query
+            nextPageUrl = null
+            recipeAdapter.submitNewList(emptyList())
+            buttonLoadMore.visibility = View.GONE
+            searchRecipesApi(query, true)
+            hideKeyboard()
+        } else {
+            Toast.makeText(requireContext(), "Introduce un término de búsqueda.", Toast.LENGTH_SHORT).show()
+        }
+    }
+
 
     private fun openRecipeDetail(recipe: Recipe) {
         Log.d(TAG, "Abriendo detalle para: ${recipe.label}")
@@ -144,8 +158,6 @@ class SearchRecipesFragment : Fragment() {
 
     private fun hideKeyboard() {
         val inputMethodManager = activity?.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-        // Usa 'view?.windowToken' si la vista raíz del fragment es la que tiene el foco,
-        // o 'activity?.currentFocus?.windowToken'
         val currentFocus = activity?.currentFocus
         if (currentFocus != null) {
             inputMethodManager?.hideSoftInputFromWindow(currentFocus.windowToken, 0)
@@ -155,19 +167,16 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun updateLoadMoreButtonVisibility() {
-        if (!isAdded) return // Comprueba si el fragment está añadido a la activity
-
+        if (!isAdded) return
         if (isLoading) {
             buttonLoadMore.visibility = View.GONE
             return
         }
-
         if (nextPageUrl != null) {
             val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
             if (layoutManager != null) {
                 val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition()
                 val totalItemCount = recipeAdapter.itemCount
-
                 if (totalItemCount > 0 && lastVisibleItemPosition == totalItemCount - 1) {
                     buttonLoadMore.visibility = View.VISIBLE
                 } else {
@@ -180,13 +189,13 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun searchRecipesApi(queryOrUrl: String, isInitialSearch: Boolean) {
-        if (!isAdded) return // Comprueba si el fragment está añadido a la activity
+        if (!isAdded) return
         if (isLoading) return
         isLoading = true
         if (isInitialSearch) {
             buttonLoadMore.visibility = View.GONE
         }
-        // TODO: Mostrar ProgressBar (necesitarás añadir un ProgressBar al layout del fragment)
+        // TODO: Mostrar ProgressBar
 
         val apiService = RetrofitClient.instance
         val call: Call<RecipeResponse>
@@ -199,7 +208,7 @@ class SearchRecipesFragment : Fragment() {
 
         call.enqueue(object : Callback<RecipeResponse> {
             override fun onResponse(call: Call<RecipeResponse>, response: Response<RecipeResponse>) {
-                if (!isAdded) return // Comprueba si el fragment sigue añadido
+                if (!isAdded) return
                 isLoading = false
                 // TODO: Ocultar ProgressBar
 
@@ -232,7 +241,7 @@ class SearchRecipesFragment : Fragment() {
             }
 
             override fun onFailure(call: Call<RecipeResponse>, t: Throwable) {
-                if (!isAdded) return // Comprueba si el fragment sigue añadido
+                if (!isAdded) return
                 isLoading = false
                 // TODO: Ocultar ProgressBar
                 Log.e(TAG, "Fallo en la llamada a la API: ${t.message}", t)
@@ -242,5 +251,4 @@ class SearchRecipesFragment : Fragment() {
             }
         })
     }
-    // ---------------------------------------------------------------------
 }

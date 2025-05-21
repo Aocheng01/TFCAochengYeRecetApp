@@ -3,8 +3,8 @@ package com.example.recetapp.adapters // O tu paquete
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import com.example.recetapp.SearchRecipesFragment
 import com.example.recetapp.fragments.PantryFragment
+import com.example.recetapp.fragments.SearchRecipesFragment
 import com.example.recetapp.fragments.ShoppingListFragment
 
 class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {

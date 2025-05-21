@@ -84,6 +84,6 @@ dependencies {
     //dependencias para viewpager2
     implementation("androidx.viewpager2:viewpager2:1.1.0") // O la última versión estable
     implementation("com.google.android.material:material:1.12.0") // O la última versión estable (para TabLayout)
-
+    implementation("androidx.fragment:fragment-ktx:1.7.1") // O la última versión estable
 
 }
