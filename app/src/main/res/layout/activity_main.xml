@@ -4,15 +4,49 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurfaceContainer"
     tools:context=".MainActivity">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="?attr/actionBarSize"
+        android:background="@android:color/transparent" android:elevation="0dp" android:theme="?attr/actionBarTheme"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:title="@string/app_name"
+        app:titleTextColor="?attr/colorOnSurface">
+
+        <ImageButton
+        android:id="@+id/imageButtonUserProfile"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="end"
+        android:background="?attr/actionBarItemBackground"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:contentDescription="."
+        app:srcCompat="@drawable/user"
+        app:tint="?attr/colorOnSurface" />
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <com.google.android.material.tabs.TabLayout
         android:id="@+id/tabLayout"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
+        android:background="?attr/colorSurfaceContainer"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"/>
+        app:layout_constraintEnd_toEndOf="parent"
+        app:tabMode="fixed"
+        app:tabGravity="fill"
+        app:tabIndicatorColor="?attr/colorPrimary"
+        app:tabIndicatorHeight="3dp"
+        app:tabIndicatorFullWidth="true"
+        app:tabSelectedTextColor="?attr/colorPrimary"
+        app:tabTextColor="?attr/colorOnSurfaceVariant"
+        app:tabRippleColor="?attr/colorPrimaryVariant" />
 
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
