@@ -12,6 +12,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.R
@@ -112,7 +113,7 @@ class PantryFragment : Fragment() {
                 // TODO: Lógica para añadir a la lista de compra real.
             },
             onDeleteClick = { pantryItem, position ->
-                deletePantryItemFromFirestore(pantryItem.id) // Ya no necesitamos la posición aquí
+                showDeleteConfirmationDialog(pantryItem)
             }
         )
         recyclerViewPantryItems.layoutManager = LinearLayoutManager(requireContext())
@@ -131,6 +132,18 @@ class PantryFragment : Fragment() {
                 false
             }
         }
+    }
+
+    private fun showDeleteConfirmationDialog(pantryItem: PantryItem) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Confirmar Eliminación")
+            .setMessage("¿Estás seguro de que quieres eliminar '${pantryItem.name}' de tu despensa?")
+            .setPositiveButton("Eliminar") { dialog, which ->
+                // Usuario confirma la eliminación
+                deletePantryItemFromFirestore(pantryItem.id)
+            }
+            .setNegativeButton("Cancelar", null) // No hace nada si se cancela
+            .show()
     }
 
     private fun addIngredientToPantry() {
