@@ -1,5 +1,6 @@
 package com.example.recetapp.viewmodels // O tu paquete com.example.recetapp
 
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -15,6 +16,7 @@ class SearchViewModel : ViewModel() {
      */
     fun setSearchQuery(query: String) {
         _navigateToSearchQuery.value = query
+        Log.d("SearchViewModel", "Search query set to: $query")
     }
 
     /**
@@ -24,5 +26,6 @@ class SearchViewModel : ViewModel() {
      */
     fun onSearchQueryNavigated() {
         _navigateToSearchQuery.value = null
+        Log.d("SearchViewModel", "Search query navigated, value set to null.")
     }
 }

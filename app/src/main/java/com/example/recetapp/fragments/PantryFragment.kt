@@ -42,6 +42,7 @@ class PantryFragment : Fragment() {
     private lateinit var recyclerViewPantryItems: RecyclerView
     private lateinit var textViewPantryEmpty: TextView
     private lateinit var pantryAdapter: PantryAdapter
+    private lateinit var buttonSuggestRecipes: Button
 
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
@@ -73,6 +74,7 @@ class PantryFragment : Fragment() {
         buttonAddPantryIngredient = view.findViewById(R.id.buttonAddPantryIngredient)
         recyclerViewPantryItems = view.findViewById(R.id.recyclerViewPantryItems)
         textViewPantryEmpty = view.findViewById(R.id.textViewPantryEmpty)
+        buttonSuggestRecipes = view.findViewById(R.id.buttonSuggestRecipesFromPantry)
 
         setupRecyclerView()
         setupListeners()
@@ -132,6 +134,15 @@ class PantryFragment : Fragment() {
                 false
             }
         }
+         buttonSuggestRecipes.setOnClickListener {
+             if (pantryItemListLocal.isNotEmpty()) {
+                 val ingredientsQuery = pantryItemListLocal.joinToString(separator = " ") { it.name }
+                 listener?.onSearchRequestedFromPantry(ingredientsQuery)
+             } else {
+                 Toast.makeText(requireContext(), "Tu despensa está vacía.", Toast.LENGTH_SHORT).show()
+             }
+         }
+
     }
 
     private fun showDeleteConfirmationDialog(pantryItem: PantryItem) {
@@ -263,12 +274,15 @@ class PantryFragment : Fragment() {
     }
 
     private fun updateEmptyViewVisibility() {
-        if (::pantryAdapter.isInitialized && pantryAdapter.isEmpty()) {
+        val isEmpty = ::pantryAdapter.isInitialized && pantryAdapter.isEmpty()
+        if (isEmpty) {
             textViewPantryEmpty.visibility = View.VISIBLE
             recyclerViewPantryItems.visibility = View.GONE
+            buttonSuggestRecipes.visibility = View.GONE // OCULTAR BOTÓN SI ESTÁ VACÍO
         } else {
             textViewPantryEmpty.visibility = View.GONE
             recyclerViewPantryItems.visibility = View.VISIBLE
+            buttonSuggestRecipes.visibility = View.VISIBLE // MOSTRAR BOTÓN SI HAY ITEMS
         }
     }
 

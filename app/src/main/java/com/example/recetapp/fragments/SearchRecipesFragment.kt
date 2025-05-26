@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
@@ -15,9 +16,9 @@ import android.widget.Toast
 import androidx.fragment.app.activityViewModels // Importa para by activityViewModels()
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.recetapp.LoginActivity // Importa LoginActivity
+import com.example.recetapp.LoginActivity
 import com.example.recetapp.R
-import com.example.recetapp.RecipeDetailActivity // Importa RecipeDetailActivity
+import com.example.recetapp.RecipeDetailActivity
 import com.example.recetapp.adapters.RecipeAdapter
 import com.example.recetapp.api.RetrofitClient
 import com.example.recetapp.data.Hit
@@ -27,9 +28,16 @@ import com.example.recetapp.viewmodels.SearchViewModel // Importa tu SearchViewM
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.auth.ktx.auth
+// Quita las importaciones de Retrofit si no las usas directamente aquí,
+// ya que la llamada se hace en la función searchRecipesApi
+// import retrofit2.Call
+// import retrofit2.Callback
+// import retrofit2.Response
+// Asegúrate de que las siguientes sí estén si las usas en searchRecipesApi
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+
 
 class SearchRecipesFragment : Fragment() {
 
@@ -40,12 +48,12 @@ class SearchRecipesFragment : Fragment() {
     private lateinit var recipeAdapter: RecipeAdapter
     private lateinit var editTextSearchQuery: EditText
     private lateinit var buttonSearch: Button
-    private lateinit var buttonLogout: Button
+    private lateinit var buttonLogout: Button // Asumiendo que este botón está en fragment_search_recipes.xml
     private lateinit var buttonLoadMore: Button
 
     private var nextPageUrl: String? = null
     private var isLoading = false
-    private var currentQuery: String = "" // Para evitar búsquedas duplicadas si la query no cambia
+    private var currentQuery: String = ""
 
     // Obtiene la instancia del SharedViewModel (scoped to Activity)
     private val searchViewModel: SearchViewModel by activityViewModels()
@@ -62,10 +70,11 @@ class SearchRecipesFragment : Fragment() {
 
         auth = Firebase.auth
 
+        // IDs del layout fragment_search_recipes.xml
         recyclerView = view.findViewById(R.id.recyclerViewRecipes)
         editTextSearchQuery = view.findViewById(R.id.editTextSearchQuery)
         buttonSearch = view.findViewById(R.id.buttonSearch)
-        buttonLogout = view.findViewById(R.id.buttonLogout)
+        buttonLogout = view.findViewById(R.id.buttonLogout) // Asegúrate que este ID existe en el fragment layout
         buttonLoadMore = view.findViewById(R.id.buttonLoadMore)
 
         recipeAdapter = RecipeAdapter(mutableListOf()) { clickedRecipe ->
@@ -78,9 +87,8 @@ class SearchRecipesFragment : Fragment() {
             performSearchFromInput()
         }
 
-        // Permitir búsqueda al pulsar "Enter" en el teclado
         editTextSearchQuery.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH) {
+            if (actionId == EditorInfo.IME_ACTION_SEARCH) {
                 performSearchFromInput()
                 true
             } else {
@@ -96,9 +104,9 @@ class SearchRecipesFragment : Fragment() {
         }
 
         buttonLogout.setOnClickListener {
-            Log.d(TAG, "Botón de logout presionado en Fragment.")
+            Log.d(TAG, "Botón de logout presionado en SearchRecipesFragment.")
             auth.signOut()
-            // (Opcional) Google Sign Out si lo implementaste
+            // (Opcional) Google Sign Out
             // val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
             // GoogleSignIn.getClient(requireActivity(), gso).signOut()
 
@@ -106,7 +114,7 @@ class SearchRecipesFragment : Fragment() {
             val intent = Intent(activity, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
-            activity?.finish()
+            activity?.finish() // Cierra MainActivity
         }
 
         recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -120,11 +128,15 @@ class SearchRecipesFragment : Fragment() {
 
         // --- Observar el LiveData del ViewModel ---
         searchViewModel.navigateToSearchQuery.observe(viewLifecycleOwner) { query ->
-            if (query != null && query.isNotBlank()) {
+            // Solo reacciona si la query es nueva y no nula/vacía
+            if (query != null && query.isNotBlank() && query != currentQuery) {
                 Log.d(TAG, "SearchRecipesFragment: Recibida query del ViewModel: $query")
-                editTextSearchQuery.setText(query) // Pone la query en el EditText
+                editTextSearchQuery.setText(query)
                 performSearch(query) // Realiza la búsqueda
                 searchViewModel.onSearchQueryNavigated() // Limpia la query para evitar re-búsquedas
+            } else if (query == null) {
+                // Si la query es null (después de onSearchQueryNavigated), no hacemos nada
+                // o podríamos limpiar el campo de búsqueda si quisiéramos.
             }
         }
     }
@@ -137,17 +149,19 @@ class SearchRecipesFragment : Fragment() {
     private fun performSearch(query: String) {
         if (query.isNotBlank()) {
             Log.d(TAG, "Iniciando búsqueda desde Fragment: $query")
-            currentQuery = query
+            currentQuery = query // Actualiza la query actual
             nextPageUrl = null
             recipeAdapter.submitNewList(emptyList())
             buttonLoadMore.visibility = View.GONE
             searchRecipesApi(query, true)
             hideKeyboard()
         } else {
-            Toast.makeText(requireContext(), "Introduce un término de búsqueda.", Toast.LENGTH_SHORT).show()
+            // No mostrar Toast si la query viene del ViewModel y es vacía después de ser consumida
+            if (editTextSearchQuery.hasFocus()) { // Solo muestra si el usuario intentó buscar con campo vacío
+                Toast.makeText(requireContext(), "Introduce un término de búsqueda.", Toast.LENGTH_SHORT).show()
+            }
         }
     }
-
 
     private fun openRecipeDetail(recipe: Recipe) {
         Log.d(TAG, "Abriendo detalle para: ${recipe.label}")
@@ -198,12 +212,10 @@ class SearchRecipesFragment : Fragment() {
         // TODO: Mostrar ProgressBar
 
         val apiService = RetrofitClient.instance
-        val call: Call<RecipeResponse>
-
-        if (isInitialSearch) {
-            call = apiService.searchRecipes(query = queryOrUrl)
+        val call: Call<RecipeResponse> = if (isInitialSearch) {
+            apiService.searchRecipes(query = queryOrUrl)
         } else {
-            call = apiService.getNextPageRecipes(nextPageUrl = queryOrUrl)
+            apiService.getNextPageRecipes(nextPageUrl = queryOrUrl)
         }
 
         call.enqueue(object : Callback<RecipeResponse> {
