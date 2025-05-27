@@ -28,6 +28,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener { // Implementa
     private lateinit var toolbar: Toolbar // Asumiendo que tienes una Toolbar
     private lateinit var imageButtonUserProfile: ImageButton // Asumiendo que tienes este botón
 
+
     // Obtiene una instancia del SharedViewModel
     private val searchViewModel: SearchViewModel by viewModels()
 
@@ -109,4 +110,6 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener { // Implementa
         // 2. Cambia a la pestaña de búsqueda (posición 1)
         viewPager.setCurrentItem(1, true) // true para una animación suave
     }
+
+
 }

@@ -134,14 +134,17 @@ class PantryFragment : Fragment() {
                 false
             }
         }
-         buttonSuggestRecipes.setOnClickListener {
-             if (pantryItemListLocal.isNotEmpty()) {
-                 val ingredientsQuery = pantryItemListLocal.joinToString(separator = " ") { it.name }
-                 listener?.onSearchRequestedFromPantry(ingredientsQuery)
-             } else {
-                 Toast.makeText(requireContext(), "Tu despensa está vacía.", Toast.LENGTH_SHORT).show()
-             }
-         }
+        buttonSuggestRecipes.setOnClickListener {
+            if (pantryItemListLocal.isNotEmpty()) {
+                // Une todos los nombres de los ingredientes de la despensa en una sola cadena
+                val ingredientsQuery = pantryItemListLocal.joinToString(separator = " ") { it.name }
+                Log.d(TAG, "Sugerir recetas con (todos los ingredientes): $ingredientsQuery")
+                // Llama al listener para que MainActivity maneje la búsqueda
+                listener?.onSearchRequestedFromPantry(ingredientsQuery)
+            } else {
+                Toast.makeText(requireContext(), "Tu despensa está vacía.", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     }
 
@@ -294,6 +297,5 @@ class PantryFragment : Fragment() {
     override fun onDetach() {
         super.onDetach()
         listener = null
-        Log.d(TAG, "PantryFragmentListener desadjuntado.")
     }
 }

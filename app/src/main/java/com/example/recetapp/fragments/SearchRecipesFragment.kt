@@ -1,4 +1,4 @@
-package com.example.recetapp.fragments // O tu paquete
+package com.example.recetapp.fragments
 
 import android.content.Context
 import android.content.Intent
@@ -12,8 +12,11 @@ import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.Button
 import android.widget.EditText
+import android.widget.TextView
 import android.widget.Toast
-import androidx.fragment.app.activityViewModels // Importa para by activityViewModels()
+import androidx.core.view.isVisible
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.LoginActivity
@@ -24,20 +27,20 @@ import com.example.recetapp.api.RetrofitClient
 import com.example.recetapp.data.Hit
 import com.example.recetapp.data.Recipe
 import com.example.recetapp.data.RecipeResponse
-import com.example.recetapp.viewmodels.SearchViewModel // Importa tu SearchViewModel
+import com.example.recetapp.viewmodels.SearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.auth.ktx.auth
-// Quita las importaciones de Retrofit si no las usas directamente aquí,
-// ya que la llamada se hace en la función searchRecipesApi
-// import retrofit2.Call
-// import retrofit2.Callback
-// import retrofit2.Response
-// Asegúrate de que las siguientes sí estén si las usas en searchRecipesApi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import retrofit2.Call
 import retrofit2.Callback
+import retrofit2.HttpException
 import retrofit2.Response
-
+import java.io.IOException
 
 class SearchRecipesFragment : Fragment() {
 
@@ -48,14 +51,14 @@ class SearchRecipesFragment : Fragment() {
     private lateinit var recipeAdapter: RecipeAdapter
     private lateinit var editTextSearchQuery: EditText
     private lateinit var buttonSearch: Button
-    private lateinit var buttonLogout: Button // Asumiendo que este botón está en fragment_search_recipes.xml
+    private lateinit var buttonLogout: Button
     private lateinit var buttonLoadMore: Button
+    private lateinit var textViewAlternativeSearchInfo: TextView
 
-    private var nextPageUrl: String? = null
     private var isLoading = false
-    private var currentQuery: String = ""
+    // nextPageUrl no se usa activamente en la lógica OR pura para paginación combinada
+    // private var nextPageUrl: String? = null
 
-    // Obtiene la instancia del SharedViewModel (scoped to Activity)
     private val searchViewModel: SearchViewModel by activityViewModels()
 
     override fun onCreateView(
@@ -67,76 +70,52 @@ class SearchRecipesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         auth = Firebase.auth
 
-        // IDs del layout fragment_search_recipes.xml
         recyclerView = view.findViewById(R.id.recyclerViewRecipes)
         editTextSearchQuery = view.findViewById(R.id.editTextSearchQuery)
         buttonSearch = view.findViewById(R.id.buttonSearch)
-        buttonLogout = view.findViewById(R.id.buttonLogout) // Asegúrate que este ID existe en el fragment layout
+        buttonLogout = view.findViewById(R.id.buttonLogout)
         buttonLoadMore = view.findViewById(R.id.buttonLoadMore)
+        textViewAlternativeSearchInfo = view.findViewById(R.id.textViewAlternativeSearchInfo)
 
-        recipeAdapter = RecipeAdapter(mutableListOf()) { clickedRecipe ->
-            openRecipeDetail(clickedRecipe)
-        }
+        recipeAdapter = RecipeAdapter(mutableListOf()) { openRecipeDetail(it) }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = recipeAdapter
+        buttonLoadMore.visibility = View.GONE // Ocultar, no hay paginación para OR
 
         buttonSearch.setOnClickListener {
+            textViewAlternativeSearchInfo.visibility = View.GONE
             performSearchFromInput()
         }
-
         editTextSearchQuery.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_SEARCH) {
+                textViewAlternativeSearchInfo.visibility = View.GONE
                 performSearchFromInput()
                 true
-            } else {
-                false
-            }
-        }
-
-        buttonLoadMore.setOnClickListener {
-            if (!isLoading && nextPageUrl != null) {
-                buttonLoadMore.visibility = View.GONE
-                searchRecipesApi(nextPageUrl!!, false)
-            }
+            } else { false }
         }
 
         buttonLogout.setOnClickListener {
             Log.d(TAG, "Botón de logout presionado en SearchRecipesFragment.")
             auth.signOut()
-            // (Opcional) Google Sign Out
-            // val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).build()
-            // GoogleSignIn.getClient(requireActivity(), gso).signOut()
-
             Toast.makeText(requireContext(), "Sesión cerrada.", Toast.LENGTH_SHORT).show()
             val intent = Intent(activity, LoginActivity::class.java)
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             startActivity(intent)
-            activity?.finish() // Cierra MainActivity
+            activity?.finish()
         }
 
-        recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() {
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (dy > 0 || (recyclerView.layoutManager as LinearLayoutManager).findLastCompletelyVisibleItemPosition() == recipeAdapter.itemCount - 1) {
-                    updateLoadMoreButtonVisibility()
-                }
-            }
-        })
+        // El OnScrollListener para cargar más no es relevante para la lista OR combinada
+        // recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() { ... })
 
-        // --- Observar el LiveData del ViewModel ---
         searchViewModel.navigateToSearchQuery.observe(viewLifecycleOwner) { query ->
-            // Solo reacciona si la query es nueva y no nula/vacía
-            if (query != null && query.isNotBlank() && query != currentQuery) {
+            if (query != null && query.isNotBlank()) {
                 Log.d(TAG, "SearchRecipesFragment: Recibida query del ViewModel: $query")
                 editTextSearchQuery.setText(query)
-                performSearch(query) // Realiza la búsqueda
-                searchViewModel.onSearchQueryNavigated() // Limpia la query para evitar re-búsquedas
-            } else if (query == null) {
-                // Si la query es null (después de onSearchQueryNavigated), no hacemos nada
-                // o podríamos limpiar el campo de búsqueda si quisiéramos.
+                textViewAlternativeSearchInfo.visibility = View.GONE
+                performSearch(query)
+                searchViewModel.onSearchQueryNavigated()
             }
         }
     }
@@ -147,19 +126,98 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun performSearch(query: String) {
-        if (query.isNotBlank()) {
-            Log.d(TAG, "Iniciando búsqueda desde Fragment: $query")
-            currentQuery = query // Actualiza la query actual
-            nextPageUrl = null
-            recipeAdapter.submitNewList(emptyList())
-            buttonLoadMore.visibility = View.GONE
-            searchRecipesApi(query, true)
-            hideKeyboard()
-        } else {
-            // No mostrar Toast si la query viene del ViewModel y es vacía después de ser consumida
-            if (editTextSearchQuery.hasFocus()) { // Solo muestra si el usuario intentó buscar con campo vacío
-                Toast.makeText(requireContext(), "Introduce un término de búsqueda.", Toast.LENGTH_SHORT).show()
+        if (query.isBlank()) {
+            if (editTextSearchQuery.hasFocus()) {
+                Toast.makeText(requireContext(), "Introduce al menos un ingrediente.", Toast.LENGTH_SHORT).show()
             }
+            return
+        }
+
+        Log.d(TAG, "Iniciando búsqueda OR para: '$query'")
+        hideKeyboard()
+        recipeAdapter.submitNewList(emptyList())
+        textViewAlternativeSearchInfo.visibility = View.GONE
+        buttonLoadMore.visibility = View.GONE
+
+        val ingredients = query.split(" ", ",")
+            .map { it.trim().lowercase(java.util.Locale.getDefault()) }
+            .filter { it.isNotBlank() }
+            .distinct()
+
+        if (ingredients.isEmpty()) {
+            Toast.makeText(requireContext(), "No se ingresaron ingredientes válidos.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        startIndividualIngredientSearches(ingredients)
+    }
+
+    private fun startIndividualIngredientSearches(ingredients: List<String>) {
+        if (!isAdded) return
+        isLoading = true
+        textViewAlternativeSearchInfo.text = "Buscando recetas para: ${ingredients.joinToString(", ")}..."
+        textViewAlternativeSearchInfo.visibility = View.VISIBLE
+        // TODO: Mostrar ProgressBar general
+
+        val accumulatedHits = mutableListOf<Hit>()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val deferredResults = ingredients.map { ingredient ->
+                async(Dispatchers.IO) {
+                    try {
+                        Log.d(TAG, "Búsqueda individual para: '$ingredient' en hilo: ${Thread.currentThread().name}")
+                        RetrofitClient.instance.searchRecipes(query = ingredient).execute()
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error en búsqueda individual para '$ingredient': ${e.message}", e)
+                        null
+                    }
+                }
+            }
+
+            deferredResults.awaitAll().forEach { response ->
+                if (response != null && response.isSuccessful) {
+                    response.body()?.hits?.let { hits ->
+                        Log.d(TAG, "Búsqueda individual encontró ${hits.size} recetas.")
+                        accumulatedHits.addAll(hits)
+                    }
+                } else if (response != null) {
+                    Log.e(TAG, "Error en respuesta de búsqueda individual: ${response.code()} - ${response.message()}")
+                }
+            }
+
+            if (!isAdded) { // Comprobar de nuevo después de las operaciones asíncronas
+                isLoading = false
+                return@launch
+            }
+
+            isLoading = false
+            // TODO: Ocultar ProgressBar general
+
+            val distinctResults = accumulatedHits.distinctBy { it.recipe?.uri }
+            val numberOfResults = distinctResults.size
+
+            if (numberOfResults > 0) {
+                Log.d(TAG, "Mostrando $numberOfResults resultados únicos combinados.")
+                recipeAdapter.submitNewList(distinctResults)
+                // ---- CAMBIO AQUÍ para mostrar el conteo ----
+                val searchedIngredientsText = if (ingredients.size > 1) {
+                    "para: ${ingredients.joinToString(", ")}"
+                } else if (ingredients.isNotEmpty()){
+                    "para: '${ingredients.first()}'"
+                } else {
+                    ""
+                }
+                textViewAlternativeSearchInfo.text = "Se encontraron $numberOfResults recetas $searchedIngredientsText"
+                // -------------------------------------------
+            } else {
+                Log.d(TAG, "No se encontraron resultados en ninguna búsqueda individual.")
+                textViewAlternativeSearchInfo.text = "No se encontraron recetas para los ingredientes proporcionados."
+                recipeAdapter.submitNewList(emptyList<Hit>())
+            }
+            textViewAlternativeSearchInfo.visibility = View.VISIBLE
+            // No hay paginación para esta lista combinada, así que nextPageUrl no se establece
+            // y updateLoadMoreButtonVisibility() (si se llamara) ocultaría el botón.
+            updateLoadMoreButtonVisibility() // Asegura que el botón de cargar más esté oculto
         }
     }
 
@@ -181,86 +239,10 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun updateLoadMoreButtonVisibility() {
-        if (!isAdded) return
-        if (isLoading) {
-            buttonLoadMore.visibility = View.GONE
-            return
+        // Con la lógica OR actual, no hay paginación para la lista combinada,
+        // así que el botón "Cargar Más" siempre estará oculto.
+        if (::buttonLoadMore.isInitialized) { // Añadir chequeo de inicialización
+            buttonLoadMore.isVisible = false
         }
-        if (nextPageUrl != null) {
-            val layoutManager = recyclerView.layoutManager as? LinearLayoutManager
-            if (layoutManager != null) {
-                val lastVisibleItemPosition = layoutManager.findLastCompletelyVisibleItemPosition()
-                val totalItemCount = recipeAdapter.itemCount
-                if (totalItemCount > 0 && lastVisibleItemPosition == totalItemCount - 1) {
-                    buttonLoadMore.visibility = View.VISIBLE
-                } else {
-                    buttonLoadMore.visibility = View.GONE
-                }
-            }
-        } else {
-            buttonLoadMore.visibility = View.GONE
-        }
-    }
-
-    private fun searchRecipesApi(queryOrUrl: String, isInitialSearch: Boolean) {
-        if (!isAdded) return
-        if (isLoading) return
-        isLoading = true
-        if (isInitialSearch) {
-            buttonLoadMore.visibility = View.GONE
-        }
-        // TODO: Mostrar ProgressBar
-
-        val apiService = RetrofitClient.instance
-        val call: Call<RecipeResponse> = if (isInitialSearch) {
-            apiService.searchRecipes(query = queryOrUrl)
-        } else {
-            apiService.getNextPageRecipes(nextPageUrl = queryOrUrl)
-        }
-
-        call.enqueue(object : Callback<RecipeResponse> {
-            override fun onResponse(call: Call<RecipeResponse>, response: Response<RecipeResponse>) {
-                if (!isAdded) return
-                isLoading = false
-                // TODO: Ocultar ProgressBar
-
-                if (response.isSuccessful) {
-                    val recipeResponse = response.body()
-                    val newHits = recipeResponse?.hits ?: emptyList()
-
-                    if (isInitialSearch) {
-                        recipeAdapter.submitNewList(newHits)
-                    } else {
-                        recipeAdapter.addRecipes(newHits)
-                    }
-                    Log.d(TAG, (if(isInitialSearch) "Búsqueda inicial" else "Paginación") + ": ${newHits.size} recetas.")
-
-                    nextPageUrl = recipeResponse?.links?.next?.href
-                    updateLoadMoreButtonVisibility()
-
-                    if (nextPageUrl == null && !isInitialSearch && newHits.isEmpty() && recipeAdapter.itemCount > 0) {
-                        Toast.makeText(requireContext(), "No hay más recetas para cargar.", Toast.LENGTH_SHORT).show()
-                    }
-                    if (isInitialSearch && newHits.isEmpty()) {
-                        Toast.makeText(requireContext(), "No se encontraron recetas para '$currentQuery'.", Toast.LENGTH_SHORT).show()
-                    }
-                } else {
-                    Log.e(TAG, "Error API: ${response.code()} - ${response.message()}")
-                    nextPageUrl = null
-                    updateLoadMoreButtonVisibility()
-                    Toast.makeText(requireContext(), "Error de API: ${response.code()}", Toast.LENGTH_SHORT).show()
-                }
-            }
-
-            override fun onFailure(call: Call<RecipeResponse>, t: Throwable) {
-                if (!isAdded) return
-                isLoading = false
-                // TODO: Ocultar ProgressBar
-                Log.e(TAG, "Fallo en la llamada a la API: ${t.message}", t)
-                nextPageUrl = null
-                updateLoadMoreButtonVisibility()
-                Toast.makeText(requireContext(), "Error de red.", Toast.LENGTH_SHORT).show()
-            }
-        })
     }
 }
