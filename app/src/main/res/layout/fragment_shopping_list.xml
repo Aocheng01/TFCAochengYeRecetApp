@@ -1,6 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    tools:context=".fragments.ShoppingListFragment"> <com.google.android.material.textfield.TextInputLayout
+    android:id="@+id/textFieldLayoutShoppingItem"
+    style="?attr/textInputFilledStyle"
+    android:layout_width="0dp"
+    android:layout_height="wrap_content"
+    android:hint="Añadir ítem a la lista de compra"
+    app:layout_constraintTop_toTopOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    app:layout_constraintEnd_toStartOf="@+id/buttonAddShoppingItem"
+    android:layout_marginEnd="8dp">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/editTextShoppingItem"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textCapWords"
+        android:imeOptions="actionDone" />
+</com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+        android:id="@+id/buttonAddShoppingItem"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:text="Añadir"
+        app:layout_constraintTop_toTopOf="@+id/textFieldLayoutShoppingItem"
+        app:layout_constraintBottom_toBottomOf="@+id/textFieldLayoutShoppingItem"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/textViewShoppingListEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Tu lista de la compra está vacía."
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone" app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutShoppingItem"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="16dp"
+        tools:visibility="visible"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewShoppingListItems"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="16dp"
+        app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutShoppingItem"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/item_shopping_list" /> </androidx.constraintlayout.widget.ConstraintLayout>
