@@ -51,7 +51,6 @@ class SearchRecipesFragment : Fragment() {
     private lateinit var recipeAdapter: RecipeAdapter
     private lateinit var editTextSearchQuery: EditText
     private lateinit var buttonSearch: Button
-    private lateinit var buttonLogout: Button
     private lateinit var buttonLoadMore: Button
     private lateinit var textViewAlternativeSearchInfo: TextView
 
@@ -75,7 +74,6 @@ class SearchRecipesFragment : Fragment() {
         recyclerView = view.findViewById(R.id.recyclerViewRecipes)
         editTextSearchQuery = view.findViewById(R.id.editTextSearchQuery)
         buttonSearch = view.findViewById(R.id.buttonSearch)
-        buttonLogout = view.findViewById(R.id.buttonLogout)
         buttonLoadMore = view.findViewById(R.id.buttonLoadMore)
         textViewAlternativeSearchInfo = view.findViewById(R.id.textViewAlternativeSearchInfo)
 
@@ -96,18 +94,6 @@ class SearchRecipesFragment : Fragment() {
             } else { false }
         }
 
-        buttonLogout.setOnClickListener {
-            Log.d(TAG, "Botón de logout presionado en SearchRecipesFragment.")
-            auth.signOut()
-            Toast.makeText(requireContext(), "Sesión cerrada.", Toast.LENGTH_SHORT).show()
-            val intent = Intent(activity, LoginActivity::class.java)
-            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-            startActivity(intent)
-            activity?.finish()
-        }
-
-        // El OnScrollListener para cargar más no es relevante para la lista OR combinada
-        // recyclerView.addOnScrollListener(object : RecyclerView.OnScrollListener() { ... })
 
         searchViewModel.navigateToSearchQuery.observe(viewLifecycleOwner) { query ->
             if (query != null && query.isNotBlank()) {
