@@ -1,81 +1,279 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".RecipeDetailActivity">
 
-    <LinearLayout
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:fitsSystemWindows="true"
+        android:theme="@style/ThemeOverlay.Material3.Dark.ActionBar" app:liftOnScroll="true">
 
-        <ImageView
-            android:id="@+id/imageViewRecipeDetail"
+        <com.google.android.material.appbar.CollapsingToolbarLayout
+            android:id="@+id/collapsingToolbar"
             android:layout_width="match_parent"
-            android:layout_height="250dp"
-            android:scaleType="centerCrop"
-            tools:srcCompat="@drawable/ic_placeholder_image"
-            android:layout_marginBottom="16dp"/>
+            android:layout_height="300dp"
+            android:fitsSystemWindows="true"
+            app:contentScrim="?attr/colorPrimary"
+            app:layout_scrollFlags="scroll|exitUntilCollapsed|snap"
+            app:collapsedTitleGravity="center_horizontal"
+            app:expandedTitleMarginStart="16dp"
+            app:expandedTitleMarginEnd="16dp"
+            app:expandedTitleGravity="bottom|center_horizontal"
+            app:expandedTitleTextAppearance="?attr/textAppearanceHeadlineSmall"
+            app:collapsedTitleTextAppearance="?attr/textAppearanceTitleLarge">
 
-        <TextView
-            android:id="@+id/textViewRecipeLabelDetail"
+            <ImageView
+                android:id="@+id/imageViewRecipeDetail"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:fitsSystemWindows="true"
+                android:scaleType="centerCrop"
+                app:layout_collapseMode="parallax"
+                tools:src="@drawable/ic_placeholder_image" android:contentDescription="@string/recipe_image_description" /> <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:layout_collapseMode="pin"
+            app:popupTheme="@style/ThemeOverlay.Material3.Light" /> </com.google.android.material.appbar.CollapsingToolbarLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textSize="24sp"
-            android:textStyle="bold"
-            tools:text="Nombre de la Receta Detalle"
-            android:layout_marginBottom="8dp"/>
+            android:orientation="vertical"
+            android:padding="16dp">
 
-        <TextView
+            <TextView
+                android:id="@+id/textViewRecipeLabelDetail_Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"
+                tools:text="Zanahorias asadas con queso feta" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="16dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_stat_calories" android:layout_marginEnd="4dp"
+                    android:contentDescription="@string/calories_icon_description"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+                <TextView
+                    android:id="@+id/textViewCaloriesDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginEnd="16dp"
+                    tools:text="441 kcal" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_stat_time" android:layout_marginEnd="4dp"
+                    android:contentDescription="@string/time_icon_description"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+                <TextView
+                    android:id="@+id/textViewTotalTimeDetail"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:layout_marginEnd="16dp"
+                    tools:text="30 minutos" />
+
+                <ImageView
+                    android:id="@+id/imageViewDifficultyIcon"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_stat_difficulty" android:layout_marginEnd="4dp"
+                    android:contentDescription="@string/difficulty_icon_description"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+                <TextView
+                    android:id="@+id/textViewDifficulty"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="16sp"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Fácil" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textViewRecipeDescription"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="16dp"
+                android:lineSpacingMultiplier="1.2"
+                tools:text="Nuestras zanahorias asadas con queso feta son la receta perfecta cuando no tienes mucho tiempo para preparar la comida. Solo tienes que cortar las zanahorias y meterlas en el horno." />
+
+            <TextView
+                android:id="@+id/textViewLabelsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Etiquetas"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/> <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupLabels"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            app:chipSpacingHorizontal="8dp"
+            app:chipSpacingVertical="4dp">
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="400-500 kcal"/>
+            <com.google.android.material.chip.Chip
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                tools:text="Almuerzo"/>
+        </com.google.android.material.chip.ChipGroup>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Ingredientes"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="4dp"/>
+            <TextView
+                android:id="@+id/textViewServingsInfoForIngredients"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:layout_marginBottom="8dp"
+                tools:text="Para X raciones" />
+            <TextView
+                android:id="@+id/textViewIngredientsDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="16dp"
+                android:lineSpacingMultiplier="1.2"
+                tools:text="- 6 Zanahorias (900 g)\n- Aceite de canola (2 cucharadas, 27 mL)\n- Sal y pimienta (al gusto)" />
+
+            <TextView
+                android:id="@+id/textViewInstructionsTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Instrucciones"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/> <TextView
+            android:id="@+id/textViewInstructions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="16dp"
+            android:lineSpacingMultiplier="1.3"
+            android:visibility="gone"
+            tools:text="1. Precalienta el horno a 200°C.\n2. Lava bien las zanahorias y córtalas.\n3. Asa las zanahorias durante 25 minutos." />
+
+            <TextView
+                android:id="@+id/textViewNutritionTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Información Nutricional"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/> <TextView
+            android:id="@+id/textViewNutritionInfoDetailed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="16sp"
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="16dp"
+            android:lineSpacingMultiplier="1.3"
+            android:visibility="gone"
+            tools:text="Calorías: 441 kcal\nProteínas: 12,0 g\nCarbohidratos: 31,6 g\nFibra alimentaria: 14,1 g\nAzúcares: 28,7 g\nGrasas: 26,4 g" />
+
+            <TextView
+                android:id="@+id/textViewSourceUrlTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Más Información"
+                android:textStyle="bold"
+                android:textSize="20sp"
+                android:textColor="?attr/colorOnSurface"
+                android:layout_marginBottom="8dp"
+                android:visibility="gone"/> <TextView
             android:id="@+id/textViewRecipeSourceDetail"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textSize="16sp"
-            tools:text="Fuente: Edamam"
-            android:layout_marginBottom="4dp"/>
+            android:textColor="?attr/colorOnSurface"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"
+            tools:text="Fuente: Nombre de la Fuente" />
+            <TextView
+                android:id="@+id/textViewRecipeUrlDetail"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="16sp"
+                android:textColor="?attr/colorPrimary"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone"
+                tools:text="Ver receta original: http://ejemplo.com" />
 
-        <TextView
-            android:id="@+id/textViewRecipeUrlDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:autoLink="web" tools:text="http://www.example.com"
-            android:layout_marginBottom="16dp"/>
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Ingredientes:"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="4dp"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabFavorite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_favorite_borderfav" app:layout_anchor="@id/appBarLayout"
+        app:layout_anchorGravity="bottom|end"
+        android:contentDescription="@string/add_to_favorites_description"
+        app:tint="?attr/colorOnPrimaryContainer"
+        app:backgroundTint="?attr/colorPrimaryContainer" />
 
-        <TextView
-            android:id="@+id/textViewIngredientsDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            tools:text=" - 1 taza de harina\n - 2 huevos\n - Pizca de sal"
-            android:layout_marginBottom="16dp"/>
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fabAddToList"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:src="@drawable/ic_add_shopping_cart" app:layout_anchor="@id/fabFavorite"
+        app:layout_anchorGravity="top"
+        android:layout_marginEnd="80dp"  app:layout_dodgeInsetEdges="bottom"
+        android:contentDescription="@string/add_to_shopping_list_description"
+        app:tint="?attr/colorOnSecondaryContainer"
+        app:backgroundTint="?attr/colorSecondaryContainer" />
 
-        <TextView
-            android:id="@+id/textViewCaloriesDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            tools:text="Calorías: 500 kcal"
-            android:layout_marginBottom="4dp"/>
-
-        <TextView
-            android:id="@+id/textViewYieldDetail"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            tools:text="Porciones: 4"
-            android:layout_marginBottom="16dp"/>
-
-    </LinearLayout>
-</ScrollView>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

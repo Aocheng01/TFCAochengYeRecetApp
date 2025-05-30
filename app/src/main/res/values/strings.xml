@@ -1,4 +1,11 @@
 <resources>
     <string name="app_name">RecetApp</string>
     <string name="app_logo_description">Logo de RecetApp</string>
+
+    <string name="recipe_image_description">Imagen de la receta</string>
+    <string name="calories_icon_description">Icono de calorías</string>
+    <string name="time_icon_description">Icono de tiempo</string>
+    <string name="difficulty_icon_description">Icono de dificultad</string>
+    <string name="servings_icon_description">Icono de porciones</string> <string name="add_to_favorites_description">Añadir a favoritos</string>
+    <string name="add_to_shopping_list_description">Añadir a la lista de la compra</string>
 </resources>
