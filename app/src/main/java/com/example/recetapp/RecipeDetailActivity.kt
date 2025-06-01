@@ -6,6 +6,7 @@ import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
+import android.util.Log
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -18,13 +19,24 @@ import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
 import java.util.Locale
 
 class RecipeDetailActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_RECIPE = "extra_recipe_data"
+        private const val TAG = "RecipeDetailActivity" // Para logs
     }
+
+    // Firebase
+    private lateinit var auth: FirebaseAuth
+    private lateinit var db: FirebaseFirestore
 
     // Variables para los FABs (para poder cambiar el icono de favorito)
     private lateinit var fabFavorite: FloatingActionButton
@@ -34,6 +46,10 @@ class RecipeDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
 
+        // Inicializar Firebase Auth y Firestore
+        auth = Firebase.auth
+        db = Firebase.firestore
+
         // Configurar Toolbar
         val toolbar: Toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -42,44 +58,35 @@ class RecipeDetailActivity : AppCompatActivity() {
 
         val collapsingToolbar: CollapsingToolbarLayout = findViewById(R.id.collapsingToolbar)
 
-        // Referencias a las vistas del layout
+        // Referencias a las vistas (asumiendo que los IDs son los del XML que adaptamos)
         val imageViewRecipeDetail: ImageView = findViewById(R.id.imageViewRecipeDetail)
-        val textViewRecipeLabelBody: TextView = findViewById(R.id.textViewRecipeLabelDetail_Body) // ID del XML
+        val textViewRecipeLabelBody: TextView = findViewById(R.id.textViewRecipeLabelDetail_Body)
 
-        // Stats
         val textViewCaloriesDetail: TextView = findViewById(R.id.textViewCaloriesDetail)
         val textViewTotalTimeDetail: TextView = findViewById(R.id.textViewTotalTimeDetail)
-        val textViewDifficulty: TextView = findViewById(R.id.textViewDifficulty) // Nuevo
+        val textViewDifficulty: TextView = findViewById(R.id.textViewDifficulty)
+        val imageViewDifficultyIcon: ImageView = findViewById(R.id.imageViewDifficultyIcon) // Asegúrate que este ID existe en el XML
 
-        // Description
-        val textViewRecipeDescription: TextView = findViewById(R.id.textViewRecipeDescription) // Nuevo
-
-        // Labels
+        val textViewRecipeDescription: TextView = findViewById(R.id.textViewRecipeDescription)
         val textViewLabelsTitle: TextView = findViewById(R.id.textViewLabelsTitle)
         val chipGroupLabels: ChipGroup = findViewById(R.id.chipGroupLabels)
 
-        // Ingredients
         val textViewServingsInfoForIngredients: TextView = findViewById(R.id.textViewServingsInfoForIngredients)
         val textViewIngredientsDetail: TextView = findViewById(R.id.textViewIngredientsDetail)
 
-        // Instructions
-        val textViewInstructionsTitle: TextView = findViewById(R.id.textViewInstructionsTitle) // Nuevo
-        val textViewInstructions: TextView = findViewById(R.id.textViewInstructions) // Nuevo
+        val textViewInstructionsTitle: TextView = findViewById(R.id.textViewInstructionsTitle)
+        val textViewInstructions: TextView = findViewById(R.id.textViewInstructions)
 
-        // Nutritional Info
-        val textViewNutritionTitle: TextView = findViewById(R.id.textViewNutritionTitle) // Nuevo
-        val textViewNutritionInfoDetailed: TextView = findViewById(R.id.textViewNutritionInfoDetailed) // Nuevo
+        val textViewNutritionTitle: TextView = findViewById(R.id.textViewNutritionTitle)
+        val textViewNutritionInfoDetailed: TextView = findViewById(R.id.textViewNutritionInfoDetailed)
 
-        // Source & URL
         val textViewSourceUrlTitle: TextView = findViewById(R.id.textViewSourceUrlTitle)
         val textViewRecipeSourceDetail: TextView = findViewById(R.id.textViewRecipeSourceDetail)
         val textViewRecipeUrlDetail: TextView = findViewById(R.id.textViewRecipeUrlDetail)
 
-        // FABs
-        fabFavorite = findViewById(R.id.fabFavorite) // Nuevo
-        val fabAddToList: FloatingActionButton = findViewById(R.id.fabAddToList) // Nuevo
+        fabFavorite = findViewById(R.id.fabFavorite)
+        val fabAddToList: FloatingActionButton = findViewById(R.id.fabAddToList)
 
-        // Obtener el objeto Recipe del Intent
         currentRecipe = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(EXTRA_RECIPE, Recipe::class.java)
         } else {
@@ -88,7 +95,7 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         if (currentRecipe != null) {
-            val recipe = currentRecipe!! // Non-null assertion para conveniencia aquí
+            val recipe = currentRecipe!!
 
             collapsingToolbar.title = recipe.label ?: "Detalle de Receta"
             textViewRecipeLabelBody.text = recipe.label ?: "N/A"
@@ -102,18 +109,18 @@ class RecipeDetailActivity : AppCompatActivity() {
             // --- Poblar Estadísticas ---
             textViewCaloriesDetail.text = recipe.calories?.let { String.format(Locale.getDefault(), "%.0f kcal", it) } ?: "N/A"
             textViewTotalTimeDetail.text = recipe.totalTime?.takeIf { it > 0 }?.let { "${it.toInt()} min" } ?: "N/A"
-            if (!recipe.difficulty.isNullOrBlank()) {
+
+            if (!recipe.difficulty.isNullOrBlank()) { // Asumiendo que añadiste 'difficulty' a Recipe.kt
                 textViewDifficulty.text = recipe.difficulty
                 textViewDifficulty.visibility = View.VISIBLE
-                findViewById<ImageView>(R.id.imageViewDifficultyIcon).visibility = View.VISIBLE // Asumiendo que tienes un ImageView con este ID para el icono
+                imageViewDifficultyIcon.visibility = View.VISIBLE
             } else {
                 textViewDifficulty.visibility = View.GONE
-                findViewById<ImageView>(R.id.imageViewDifficultyIcon).visibility = View.GONE // Oculta también el icono
+                imageViewDifficultyIcon.visibility = View.GONE
             }
 
-
             // --- Poblar Descripción ---
-            if (!recipe.description.isNullOrBlank()) {
+            if (!recipe.description.isNullOrBlank()) { // Asumiendo que añadiste 'description' a Recipe.kt
                 textViewRecipeDescription.text = recipe.description
                 textViewRecipeDescription.visibility = View.VISIBLE
             } else {
@@ -132,7 +139,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                 allLabels.distinct().forEach { labelString ->
                     val chip = Chip(this)
                     chip.text = labelString
-                    //chip.setStyle(com.google.android.material.R.style.Widget_Material3_Chip_Assist)
+                    // No es necesario chip.setStyle(...) aquí si tu tema de Material 3 ya define estilos para Chip
                     chipGroupLabels.addView(chip)
                 }
             } else {
@@ -147,12 +154,11 @@ class RecipeDetailActivity : AppCompatActivity() {
                 textViewIngredientsDetail.visibility = View.VISIBLE
             } else {
                 textViewIngredientsDetail.text = "Ingredientes no listados."
-                textViewIngredientsDetail.visibility = View.VISIBLE // O GONE si prefieres ocultarlo
+                textViewIngredientsDetail.visibility = View.VISIBLE
             }
 
-
             // --- Poblar Instrucciones ---
-            if (!recipe.instructions.isNullOrEmpty()) {
+            if (!recipe.instructions.isNullOrEmpty()) { // Asumiendo que añadiste 'instructions' a Recipe.kt
                 textViewInstructionsTitle.visibility = View.VISIBLE
                 textViewInstructions.text = recipe.instructions.mapIndexed { index, step -> "${index + 1}. $step" }.joinToString("\n")
                 textViewInstructions.visibility = View.VISIBLE
@@ -162,11 +168,12 @@ class RecipeDetailActivity : AppCompatActivity() {
             }
 
             // --- Poblar Información Nutricional Detallada ---
-            // Esto es un ejemplo, necesitarás adaptarlo a cómo proceses recipe.totalNutrientsDetailed
             val nutritionBuilder = StringBuilder()
-            recipe.totalNutrientsDetailed?.forEach { (key, nutrient) -> // Asumiendo que totalNutrientsDetailed es Map<String, NutrientDetail>
-                // Filtra o formatea los nutrientes que quieras mostrar
+            // Asumiendo que 'totalNutrients' en tu Recipe.kt es Map<String, NutrientDetail>?
+            // y que NutrientDetail tiene label, quantity, unit
+            recipe.totalNutrients?.forEach { (key, nutrient) ->
                 if (nutrient.label != null && nutrient.quantity != null && nutrient.unit != null) {
+                    // Mostrar solo algunos nutrientes clave como ejemplo
                     if (listOf("Energy", "Protein", "Fat", "Carbohydrate", "Fiber").any { nutrient.label.contains(it, ignoreCase = true)}) {
                         nutritionBuilder.append("${nutrient.label}: ${String.format(Locale.getDefault(), "%.1f", nutrient.quantity)} ${nutrient.unit}\n")
                     }
@@ -177,7 +184,6 @@ class RecipeDetailActivity : AppCompatActivity() {
                 textViewNutritionInfoDetailed.text = nutritionBuilder.toString().trim()
                 textViewNutritionInfoDetailed.visibility = View.VISIBLE
             } else {
-                // Fallback a calorías simples si no hay detallada pero sí calorías
                 recipe.calories?.let {
                     textViewNutritionTitle.visibility = View.VISIBLE
                     textViewNutritionInfoDetailed.text = "Calorías totales: ${String.format(Locale.getDefault(), "%.0f kcal", it)}"
@@ -199,7 +205,7 @@ class RecipeDetailActivity : AppCompatActivity() {
             }
 
             if (!recipe.url.isNullOrBlank()) {
-                textViewRecipeUrlDetail.text = recipe.url // El XML ya tiene autoLink, o puedes hacerlo programático
+                textViewRecipeUrlDetail.text = recipe.url
                 textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance()
                 textViewRecipeUrlDetail.visibility = View.VISIBLE
                 sourceOrUrlExists = true
@@ -217,7 +223,7 @@ class RecipeDetailActivity : AppCompatActivity() {
             updateFavoriteIcon(recipe.isFavorite) // Asume que isFavorite se determina al cargar
 
             fabFavorite.setOnClickListener {
-                recipe.isFavorite = !recipe.isFavorite // Cambia el estado local
+                recipe.isFavorite = !recipe.isFavorite
                 updateFavoriteIcon(recipe.isFavorite)
                 // AQUÍ VA LA LÓGICA PARA GUARDAR/ELIMINAR DE FAVORITOS EN FIRESTORE
                 val action = if (recipe.isFavorite) "añadida a" else "eliminada de"
@@ -225,39 +231,97 @@ class RecipeDetailActivity : AppCompatActivity() {
             }
 
             fabAddToList.setOnClickListener {
-                // AQUÍ VA LA LÓGICA PARA AÑADIR INGREDIENTES A LA LISTA DE LA COMPRA EN FIRESTORE
-                Toast.makeText(this, "Añadir ingredientes a lista (Implementar Firestore)", Toast.LENGTH_SHORT).show()
-                // Ejemplo de cómo podrías hacerlo:
-                // recipe.ingredientLines?.forEach { ingredient ->
-                //    viewModel.addShoppingListItem(ingredient) // Si tuvieras un ViewModel para esto
-                // }
+                addIngredientsToShoppingList(recipe)
             }
 
         } else {
             collapsingToolbar.title = "Error"
             textViewRecipeLabelBody.text = "Error al cargar detalles"
             Toast.makeText(this, "No se pudieron cargar los detalles de la receta.", Toast.LENGTH_LONG).show()
-            finish() // Cierra la actividad si no hay datos válidos
+            finish()
         }
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
         if (isFav) {
-            fabFavorite.setImageResource(R.drawable.ic_favfilled) // Icono de corazón relleno
+            fabFavorite.setImageResource(R.drawable.ic_favorite) // Icono de corazón relleno
         } else {
-            fabFavorite.setImageResource(R.drawable.ic_favorite_borderfav) // Icono de corazón vacío
+            fabFavorite.setImageResource(R.drawable.ic_favorite_border) // Icono de corazón vacío
         }
     }
+
+    private fun addIngredientsToShoppingList(recipe: Recipe) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(this, "Debes iniciar sesión para añadir a la lista.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        if (recipe.ingredientLines.isNullOrEmpty()) {
+            Toast.makeText(this, "No hay ingredientes para añadir.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val shoppingListCollection = db.collection("users").document(userId)
+            .collection("shoppingListItems")
+
+        var itemsAddedSuccessfully = 0
+        var itemsFailedToAdd = 0
+        val totalItemsToAttempt = recipe.ingredientLines.size
+
+        // Deshabilitar botón mientras se procesa (opcional)
+        // fabAddToList.isEnabled = false
+
+        recipe.ingredientLines.forEach { ingredientName ->
+            if (ingredientName.isNotBlank()) {
+                val shoppingItemData = hashMapOf(
+                    "name" to ingredientName, // El string completo del ingrediente
+                    "isPurchased" to false,
+                    "addedAt" to FieldValue.serverTimestamp()
+                )
+
+                // Usamos .add() para que Firestore genere un ID único para cada ítem
+                shoppingListCollection.add(shoppingItemData)
+                    .addOnSuccessListener {
+                        itemsAddedSuccessfully++
+                        if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
+                            showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        itemsFailedToAdd++
+                        Log.w(TAG, "Error al añadir '$ingredientName' a la lista de compra", e)
+                        if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
+                            showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
+                        }
+                    }
+            } else {
+                // Si un ingrediente está en blanco, se cuenta como fallo para el feedback final
+                itemsFailedToAdd++
+                if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
+                    showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
+                }
+            }
+        }
+    }
+
+    private fun showShoppingListFeedback(successful: Int, failed: Int) {
+        // Habilitar botón de nuevo (opcional)
+        // fabAddToList.isEnabled = true
+
+        if (successful > 0 && failed == 0) {
+            Toast.makeText(this, "$successful ingrediente(s) añadido(s) a la lista.", Toast.LENGTH_LONG).show()
+        } else if (successful > 0 && failed > 0) {
+            Toast.makeText(this, "$successful ingrediente(s) añadido(s), $failed no se pudieron añadir.", Toast.LENGTH_LONG).show()
+        } else if (successful == 0 && failed > 0) {
+            Toast.makeText(this, "No se pudieron añadir los ingredientes a la lista.", Toast.LENGTH_LONG).show()
+        }
+        // No mostrar nada si no había ingredientes para intentar
+    }
+
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
     }
 }
-
-// Necesitarás añadir un ID al ImageView del icono de dificultad en tu XML para poder ocultarlo/mostrarlo:
-// Ejemplo:
-// <ImageView
-//     android:id="@+id/imageViewDifficultyIcon" <--- AÑADE ESTE ID
-//     android:layout_width="24dp"
-//     ... />

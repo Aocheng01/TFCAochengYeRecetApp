@@ -258,7 +258,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
-        android:src="@drawable/ic_favorite_borderfav" app:layout_anchor="@id/appBarLayout"
+        android:src="@drawable/ic_favorite_border" app:layout_anchor="@id/appBarLayout"
         app:layout_anchorGravity="bottom|end"
         android:contentDescription="@string/add_to_favorites_description"
         app:tint="?attr/colorOnPrimaryContainer"

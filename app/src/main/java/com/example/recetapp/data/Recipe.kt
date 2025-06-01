@@ -28,7 +28,8 @@ data class Recipe(
     // val cuisineType: List<String>?,
     // val mealType: List<String>?,
     // val dishType: List<String>?,
-    val totalNutrients: NutrientsInfo?, // Información nutricional detallada
+    val totalNutrients: Map<String, NutrientDetail>?,
+    //val totalNutrients: NutrientsInfo?, // Información nutricional detallada
     // val totalDaily: NutrientsInfo? // Porcentaje diario de nutrientes
     // val digest: List<DigestInfo>? // Información de digestión por nutriente
     val difficulty: String? = null, // Para la dificultad (ej. "Fácil", "Medio")
