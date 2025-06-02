@@ -1,7 +1,7 @@
 package com.example.recetapp
 
-import android.content.Intent
-import android.net.Uri
+import android.content.Intent // Asegúrate de que esté para Uri
+import android.net.Uri // Para abrir URLs
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -11,9 +11,9 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.widget.Toolbar
+import androidx.appcompat.widget.Toolbar // Importa Toolbar
 import coil.load
-import com.example.recetapp.data.NutrientDetail // Asegúrate de importar esto si lo usas
+import com.example.recetapp.data.NutrientDetail // Importa NutrientDetail
 import com.example.recetapp.data.Recipe
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.chip.Chip
@@ -31,61 +31,112 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_RECIPE = "extra_recipe_data"
-        private const val TAG = "RecipeDetailActivity" // Para logs
+        private const val TAG = "RecipeDetailActivity"
+
+        // --- MAPAS PARA TRADUCCIÓN MANUAL ---
+        private val dietHealthLabelTranslations = mapOf(
+            "balanced" to "Equilibrado", "high-fiber" to "Alto en Fibra", "high-protein" to "Alto en Proteínas",
+            "low-carb" to "Bajo en Carbohidratos", "low-fat" to "Bajo en Grasas", "low-sodium" to "Bajo en Sodio",
+            "alcohol-cocktail" to "Cóctel con Alcohol", "alcohol-free" to "Sin Alcohol", "celery-free" to "Sin Apio",
+            "crustacean-free" to "Sin Crustáceos", "dairy-free" to "Sin Lácteos", "egg-free" to "Sin Huevo",
+            "fish-free" to "Sin Pescado", "fodmap-free" to "Sin FODMAP", "gluten-free" to "Sin Gluten",
+            "immuno-supportive" to "Refuerzo Inmunológico", "keto-friendly" to "Apto Dieta Keto",
+            "kidney-friendly" to "Apto para Riñón", "kosher" to "Kosher", "low potassium" to "Bajo en Potasio",
+            "low sugar" to "Bajo en Azúcar", "lupine-free" to "Sin Altramuces", "mediterranean" to "Mediterráneo",
+            "mollusk-free" to "Sin Moluscos", "mustard-free" to "Sin Mostaza", "no oil added" to "Sin Aceite Añadido",
+            "paleo" to "Paleo", "peanut-free" to "Sin Cacahuetes", "pescatarian" to "Pescetariano",
+            "pork-free" to "Sin Cerdo", "red-meat-free" to "Sin Carne Roja", "sesame-free" to "Sin Sésamo",
+            "shellfish-free" to "Sin Mariscos", "soy-free" to "Sin Soja", "sugar-conscious" to "Bajo en Azúcares",
+            "sulfite-free" to "Sin Sulfitos", "tree-nut-free" to "Sin Frutos Secos de Árbol",
+            "vegan" to "Vegano", "vegetarian" to "Vegetariano", "wheat-free" to "Sin Trigo"
+            // COMPLETA ESTA LISTA CON LOS VALORES EXACTOS DE LA API
+        )
+
+        private val nutrientNameTranslations = mapOf(
+            "energy" to "Energía", "fat" to "Grasas Totales", "total lipid (fat)" to "Grasas Totales",
+            "saturated" to "Grasas Saturadas", "fatty acids, total saturated" to "Grasas Saturadas",
+            "trans" to "Grasas Trans", "fatty acids, total trans" to "Grasas Trans",
+            "cholesterol" to "Colesterol", "sodium" to "Sodio",
+            "carbohydrate, by difference" to "Carbohidratos", "carbs" to "Carbohidratos",
+            "carbohydrate (net)" to "Carbohidratos (Netos)", "fiber" to "Fibra",
+            "fiber, total dietary" to "Fibra Dietética Total", "sugars, total including nlea" to "Azúcares Totales",
+            "sugar" to "Azúcares", "sugars, added" to "Azúcares Añadidos", "protein" to "Proteínas",
+            "vitamin a" to "Vitamina A", "vitamin c" to "Vitamina C", "vitamin d" to "Vitamina D",
+            "vitamin e" to "Vitamina E", "vitamin k" to "Vitamina K", "thiamin" to "Tiamina (B1)",
+            "riboflavin" to "Riboflavina (B2)", "niacin" to "Niacina (B3)", "vitamin b6" to "Vitamina B6",
+            "folate" to "Folato (B9)", "vitamin b12" to "Vitamina B12", "calcium" to "Calcio",
+            "iron" to "Hierro", "magnesium" to "Magnesio", "phosphorus" to "Fósforo",
+            "potassium" to "Potasio", "zinc" to "Zinc", "water" to "Agua"
+            // COMPLETA ESTA LISTA CON LOS NOMBRES DE NUTRIENTES DE LA API (EN MINÚSCULAS COMO CLAVE)
+        )
+
+        private val unitTranslations = mapOf(
+            "g" to "g", "mg" to "mg", "µg" to "µg", "kcal" to "kcal", "%" to "%", "iu" to "UI"
+        )
     }
 
-    // Firebase
     private lateinit var auth: FirebaseAuth
     private lateinit var db: FirebaseFirestore
-
-    // Variables para los FABs (para poder cambiar el icono de favorito)
     private lateinit var fabFavorite: FloatingActionButton
-    private var currentRecipe: Recipe? = null // Para acceder a la receta en los listeners
+    private var currentRecipe: Recipe? = null
+
+    // Referencias a las vistas (para evitar múltiples findViewById)
+    private lateinit var collapsingToolbar: CollapsingToolbarLayout
+    private lateinit var imageViewRecipeDetail: ImageView
+    private lateinit var textViewRecipeLabelBody: TextView
+    private lateinit var textViewCaloriesDetailStat: TextView // Renombrado para claridad con el de nutrición
+    private lateinit var textViewTotalTimeDetailStat: TextView // Renombrado para claridad
+    private lateinit var textViewDifficulty: TextView
+    private lateinit var imageViewDifficultyIcon: ImageView
+    private lateinit var textViewRecipeDescription: TextView
+    private lateinit var textViewLabelsTitle: TextView
+    private lateinit var chipGroupLabels: ChipGroup
+    private lateinit var textViewServingsInfoForIngredients: TextView
+    private lateinit var textViewIngredientsDetail: TextView
+    private lateinit var textViewInstructionsTitle: TextView
+    private lateinit var textViewInstructions: TextView
+    private lateinit var textViewNutritionTitle: TextView
+    private lateinit var textViewNutritionInfoDetailed: TextView
+    private lateinit var textViewSourceUrlTitle: TextView
+    private lateinit var textViewRecipeSourceDetail: TextView
+    private lateinit var textViewRecipeUrlDetail: TextView
+    private lateinit var fabAddToList: FloatingActionButton
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
 
-        // Inicializar Firebase Auth y Firestore
         auth = Firebase.auth
         db = Firebase.firestore
 
-        // Configurar Toolbar
+        // Inicializar Vistas
         val toolbar: Toolbar = findViewById(R.id.toolbar)
+        collapsingToolbar = findViewById(R.id.collapsingToolbar)
+        imageViewRecipeDetail = findViewById(R.id.imageViewRecipeDetail)
+        textViewRecipeLabelBody = findViewById(R.id.textViewRecipeLabelDetail_Body)
+        textViewCaloriesDetailStat = findViewById(R.id.textViewCaloriesDetail) // ID del XML para stats
+        textViewTotalTimeDetailStat = findViewById(R.id.textViewTotalTimeDetail) // ID del XML para stats
+        textViewDifficulty = findViewById(R.id.textViewDifficulty)
+        imageViewDifficultyIcon = findViewById(R.id.imageViewDifficultyIcon)
+        textViewRecipeDescription = findViewById(R.id.textViewRecipeDescription)
+        textViewLabelsTitle = findViewById(R.id.textViewLabelsTitle)
+        chipGroupLabels = findViewById(R.id.chipGroupLabels)
+        textViewServingsInfoForIngredients = findViewById(R.id.textViewServingsInfoForIngredients)
+        textViewIngredientsDetail = findViewById(R.id.textViewIngredientsDetail)
+        textViewInstructionsTitle = findViewById(R.id.textViewInstructionsTitle)
+        textViewInstructions = findViewById(R.id.textViewInstructions)
+        textViewNutritionTitle = findViewById(R.id.textViewNutritionTitle)
+        textViewNutritionInfoDetailed = findViewById(R.id.textViewNutritionInfoDetailed)
+        textViewSourceUrlTitle = findViewById(R.id.textViewSourceUrlTitle)
+        textViewRecipeSourceDetail = findViewById(R.id.textViewRecipeSourceDetail)
+        textViewRecipeUrlDetail = findViewById(R.id.textViewRecipeUrlDetail)
+        fabFavorite = findViewById(R.id.fabFavorite)
+        fabAddToList = findViewById(R.id.fabAddToList)
+
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         supportActionBar?.setDisplayShowHomeEnabled(true)
-
-        val collapsingToolbar: CollapsingToolbarLayout = findViewById(R.id.collapsingToolbar)
-
-        // Referencias a las vistas (asumiendo que los IDs son los del XML que adaptamos)
-        val imageViewRecipeDetail: ImageView = findViewById(R.id.imageViewRecipeDetail)
-        val textViewRecipeLabelBody: TextView = findViewById(R.id.textViewRecipeLabelDetail_Body)
-
-        val textViewCaloriesDetail: TextView = findViewById(R.id.textViewCaloriesDetail)
-        val textViewTotalTimeDetail: TextView = findViewById(R.id.textViewTotalTimeDetail)
-        val textViewDifficulty: TextView = findViewById(R.id.textViewDifficulty)
-        val imageViewDifficultyIcon: ImageView = findViewById(R.id.imageViewDifficultyIcon) // Asegúrate que este ID existe en el XML
-
-        val textViewRecipeDescription: TextView = findViewById(R.id.textViewRecipeDescription)
-        val textViewLabelsTitle: TextView = findViewById(R.id.textViewLabelsTitle)
-        val chipGroupLabels: ChipGroup = findViewById(R.id.chipGroupLabels)
-
-        val textViewServingsInfoForIngredients: TextView = findViewById(R.id.textViewServingsInfoForIngredients)
-        val textViewIngredientsDetail: TextView = findViewById(R.id.textViewIngredientsDetail)
-
-        val textViewInstructionsTitle: TextView = findViewById(R.id.textViewInstructionsTitle)
-        val textViewInstructions: TextView = findViewById(R.id.textViewInstructions)
-
-        val textViewNutritionTitle: TextView = findViewById(R.id.textViewNutritionTitle)
-        val textViewNutritionInfoDetailed: TextView = findViewById(R.id.textViewNutritionInfoDetailed)
-
-        val textViewSourceUrlTitle: TextView = findViewById(R.id.textViewSourceUrlTitle)
-        val textViewRecipeSourceDetail: TextView = findViewById(R.id.textViewRecipeSourceDetail)
-        val textViewRecipeUrlDetail: TextView = findViewById(R.id.textViewRecipeUrlDetail)
-
-        fabFavorite = findViewById(R.id.fabFavorite)
-        val fabAddToList: FloatingActionButton = findViewById(R.id.fabAddToList)
 
         currentRecipe = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             intent.getParcelableExtra(EXTRA_RECIPE, Recipe::class.java)
@@ -96,157 +147,192 @@ class RecipeDetailActivity : AppCompatActivity() {
 
         if (currentRecipe != null) {
             val recipe = currentRecipe!!
-
-            collapsingToolbar.title = recipe.label ?: "Detalle de Receta"
-            textViewRecipeLabelBody.text = recipe.label ?: "N/A"
-
-            imageViewRecipeDetail.load(recipe.image) {
-                crossfade(true)
-                placeholder(R.drawable.ic_placeholder_image)
-                error(R.drawable.ic_error_image)
-            }
-
-            // --- Poblar Estadísticas ---
-            textViewCaloriesDetail.text = recipe.calories?.let { String.format(Locale.getDefault(), "%.0f kcal", it) } ?: "N/A"
-            textViewTotalTimeDetail.text = recipe.totalTime?.takeIf { it > 0 }?.let { "${it.toInt()} min" } ?: "N/A"
-
-            if (!recipe.difficulty.isNullOrBlank()) { // Asumiendo que añadiste 'difficulty' a Recipe.kt
-                textViewDifficulty.text = recipe.difficulty
-                textViewDifficulty.visibility = View.VISIBLE
-                imageViewDifficultyIcon.visibility = View.VISIBLE
-            } else {
-                textViewDifficulty.visibility = View.GONE
-                imageViewDifficultyIcon.visibility = View.GONE
-            }
-
-            // --- Poblar Descripción ---
-            if (!recipe.description.isNullOrBlank()) { // Asumiendo que añadiste 'description' a Recipe.kt
-                textViewRecipeDescription.text = recipe.description
-                textViewRecipeDescription.visibility = View.VISIBLE
-            } else {
-                textViewRecipeDescription.visibility = View.GONE
-            }
-
-            // --- Poblar Etiquetas (Chips) ---
-            chipGroupLabels.removeAllViews()
-            val allLabels = mutableListOf<String>()
-            recipe.dietLabels?.let { allLabels.addAll(it) }
-            recipe.healthLabels?.let { allLabels.addAll(it) }
-
-            if (allLabels.isNotEmpty()) {
-                textViewLabelsTitle.visibility = View.VISIBLE
-                chipGroupLabels.visibility = View.VISIBLE
-                allLabels.distinct().forEach { labelString ->
-                    val chip = Chip(this)
-                    chip.text = labelString
-                    // No es necesario chip.setStyle(...) aquí si tu tema de Material 3 ya define estilos para Chip
-                    chipGroupLabels.addView(chip)
-                }
-            } else {
-                textViewLabelsTitle.visibility = View.GONE
-                chipGroupLabels.visibility = View.GONE
-            }
-
-            // --- Poblar Ingredientes ---
-            textViewServingsInfoForIngredients.text = recipe.servings?.takeIf { it > 0 }?.let { "Para %.0f raciones".format(it) } ?: "Raciones no especificadas"
-            if (!recipe.ingredientLines.isNullOrEmpty()) {
-                textViewIngredientsDetail.text = recipe.ingredientLines.joinToString(separator = "\n") { "- $it" }
-                textViewIngredientsDetail.visibility = View.VISIBLE
-            } else {
-                textViewIngredientsDetail.text = "Ingredientes no listados."
-                textViewIngredientsDetail.visibility = View.VISIBLE
-            }
-
-            // --- Poblar Instrucciones ---
-            if (!recipe.instructions.isNullOrEmpty()) { // Asumiendo que añadiste 'instructions' a Recipe.kt
-                textViewInstructionsTitle.visibility = View.VISIBLE
-                textViewInstructions.text = recipe.instructions.mapIndexed { index, step -> "${index + 1}. $step" }.joinToString("\n")
-                textViewInstructions.visibility = View.VISIBLE
-            } else {
-                textViewInstructionsTitle.visibility = View.GONE
-                textViewInstructions.visibility = View.GONE
-            }
-
-            // --- Poblar Información Nutricional Detallada ---
-            val nutritionBuilder = StringBuilder()
-            // Asumiendo que 'totalNutrients' en tu Recipe.kt es Map<String, NutrientDetail>?
-            // y que NutrientDetail tiene label, quantity, unit
-            recipe.totalNutrients?.forEach { (key, nutrient) ->
-                if (nutrient.label != null && nutrient.quantity != null && nutrient.unit != null) {
-                    // Mostrar solo algunos nutrientes clave como ejemplo
-                    if (listOf("Energy", "Protein", "Fat", "Carbohydrate", "Fiber").any { nutrient.label.contains(it, ignoreCase = true)}) {
-                        nutritionBuilder.append("${nutrient.label}: ${String.format(Locale.getDefault(), "%.1f", nutrient.quantity)} ${nutrient.unit}\n")
-                    }
-                }
-            }
-            if (nutritionBuilder.isNotBlank()) {
-                textViewNutritionTitle.visibility = View.VISIBLE
-                textViewNutritionInfoDetailed.text = nutritionBuilder.toString().trim()
-                textViewNutritionInfoDetailed.visibility = View.VISIBLE
-            } else {
-                recipe.calories?.let {
-                    textViewNutritionTitle.visibility = View.VISIBLE
-                    textViewNutritionInfoDetailed.text = "Calorías totales: ${String.format(Locale.getDefault(), "%.0f kcal", it)}"
-                    textViewNutritionInfoDetailed.visibility = View.VISIBLE
-                } ?: run {
-                    textViewNutritionTitle.visibility = View.GONE
-                    textViewNutritionInfoDetailed.visibility = View.GONE
-                }
-            }
-
-            // --- Poblar Fuente y URL ---
-            var sourceOrUrlExists = false
-            if (!recipe.source.isNullOrBlank()) {
-                textViewRecipeSourceDetail.text = "Fuente: ${recipe.source}"
-                textViewRecipeSourceDetail.visibility = View.VISIBLE
-                sourceOrUrlExists = true
-            } else {
-                textViewRecipeSourceDetail.visibility = View.GONE
-            }
-
-            if (!recipe.url.isNullOrBlank()) {
-                textViewRecipeUrlDetail.text = recipe.url
-                textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance()
-                textViewRecipeUrlDetail.visibility = View.VISIBLE
-                sourceOrUrlExists = true
-            } else {
-                textViewRecipeUrlDetail.visibility = View.GONE
-            }
-
-            if(sourceOrUrlExists) {
-                textViewSourceUrlTitle.visibility = View.VISIBLE
-            } else {
-                textViewSourceUrlTitle.visibility = View.GONE
-            }
-
-            // --- Configurar FABs ---
-            updateFavoriteIcon(recipe.isFavorite) // Asume que isFavorite se determina al cargar
-
-            fabFavorite.setOnClickListener {
-                recipe.isFavorite = !recipe.isFavorite
-                updateFavoriteIcon(recipe.isFavorite)
-                // AQUÍ VA LA LÓGICA PARA GUARDAR/ELIMINAR DE FAVORITOS EN FIRESTORE
-                val action = if (recipe.isFavorite) "añadida a" else "eliminada de"
-                Toast.makeText(this, "Receta $action favoritos (Implementar Firestore)", Toast.LENGTH_SHORT).show()
-            }
-
-            fabAddToList.setOnClickListener {
-                addIngredientsToShoppingList(recipe)
-            }
-
+            populateUI(recipe) // Llamada a función para poblar la UI
         } else {
-            collapsingToolbar.title = "Error"
-            textViewRecipeLabelBody.text = "Error al cargar detalles"
-            Toast.makeText(this, "No se pudieron cargar los detalles de la receta.", Toast.LENGTH_LONG).show()
-            finish()
+            handleRecipeError()
         }
+    }
+
+    private fun populateUI(recipe: Recipe) {
+        collapsingToolbar.title = recipe.label ?: "Detalle de Receta"
+        textViewRecipeLabelBody.text = recipe.label ?: "N/A"
+
+        imageViewRecipeDetail.load(recipe.image) {
+            crossfade(true)
+            placeholder(R.drawable.ic_placeholder_image)
+            error(R.drawable.ic_error_image)
+        }
+
+        // --- Poblar Estadísticas (calculando calorías por porción si es posible) ---
+        val servingsForStats = recipe.servings?.takeIf { it > 0f }
+        val caloriesPerServingStat = if (servingsForStats != null && recipe.calories != null) {
+            recipe.calories / servingsForStats
+        } else {
+            recipe.calories // Mostrar total si no hay porciones
+        }
+        val caloriesStatLabel = if (servingsForStats != null) "kcal/porción" else "kcal total"
+        textViewCaloriesDetailStat.text = caloriesPerServingStat?.let { String.format(Locale.getDefault(), "%.0f $caloriesStatLabel", it) } ?: "N/A"
+        textViewTotalTimeDetailStat.text = recipe.totalTime?.takeIf { it > 0 }?.let { "${it.toInt()} min" } ?: "N/A"
+
+        if (!recipe.difficulty.isNullOrBlank()) {
+            textViewDifficulty.text = recipe.difficulty
+            textViewDifficulty.visibility = View.VISIBLE
+            imageViewDifficultyIcon.visibility = View.VISIBLE
+        } else {
+            textViewDifficulty.visibility = View.GONE
+            imageViewDifficultyIcon.visibility = View.GONE
+        }
+
+        // --- Poblar Descripción ---
+        textViewRecipeDescription.text = recipe.description
+        textViewRecipeDescription.visibility = if (recipe.description.isNullOrBlank()) View.GONE else View.VISIBLE
+
+        // --- Poblar Etiquetas (Chips) - CON TRADUCCIÓN ---
+        chipGroupLabels.removeAllViews()
+        val allLabels = mutableListOf<String>()
+        recipe.dietLabels?.let { allLabels.addAll(it) }
+        recipe.healthLabels?.let { allLabels.addAll(it) }
+
+        if (allLabels.isNotEmpty()) {
+            textViewLabelsTitle.visibility = View.VISIBLE
+            chipGroupLabels.visibility = View.VISIBLE
+            allLabels.distinct().forEach { labelString ->
+                val chip = Chip(this)
+                val translatedLabel = dietHealthLabelTranslations[labelString.lowercase(Locale.ROOT)] ?: labelString
+                chip.text = translatedLabel
+                chipGroupLabels.addView(chip)
+            }
+        } else {
+            textViewLabelsTitle.visibility = View.GONE
+            chipGroupLabels.visibility = View.GONE
+        }
+
+        // --- Poblar Ingredientes ---
+        textViewServingsInfoForIngredients.text = recipe.servings?.takeIf { it > 0 }?.let { "Para %.0f raciones".format(it) } ?: "Raciones no especificadas"
+        if (!recipe.ingredientLines.isNullOrEmpty()) {
+            textViewIngredientsDetail.text = recipe.ingredientLines.joinToString(separator = "\n") { "- $it" }
+            textViewIngredientsDetail.visibility = View.VISIBLE
+        } else {
+            textViewIngredientsDetail.text = "Ingredientes no listados."
+            textViewIngredientsDetail.visibility = View.VISIBLE
+        }
+
+        // --- Poblar Instrucciones ---
+        if (!recipe.instructions.isNullOrEmpty()) {
+            textViewInstructionsTitle.visibility = View.VISIBLE
+            textViewInstructions.text = recipe.instructions.mapIndexed { index, step -> "${index + 1}. $step" }.joinToString("\n")
+            textViewInstructions.visibility = View.VISIBLE
+        } else {
+            textViewInstructionsTitle.visibility = View.GONE
+            textViewInstructions.visibility = View.GONE
+        }
+
+        // --- Poblar Información Nutricional Detallada - CON TRADUCCIÓN Y POR PORCIÓN ---
+        val nutritionBuilder = StringBuilder()
+        val servingsForNutrition = recipe.servings?.takeIf { it > 0f }
+
+        val nutritionSectionTitleText: String
+        if (servingsForNutrition != null) {
+            nutritionSectionTitleText = "Información Nutricional (por porción)"
+        } else {
+            nutritionSectionTitleText = "Información Nutricional (Total Receta)"
+        }
+        textViewNutritionTitle.text = nutritionSectionTitleText
+
+        recipe.totalNutrients?.forEach { (_, nutrientDetail) -> // Clave del mapa no usada aquí, solo el objeto NutrientDetail
+            if (nutrientDetail.label != null && nutrientDetail.quantity != null && nutrientDetail.unit != null) {
+                val nutrientLabelInLower = nutrientDetail.label.lowercase(Locale.ROOT)
+                val translatedNutrientName = nutrientNameTranslations[nutrientLabelInLower] ?: nutrientDetail.label
+                val translatedUnit = unitTranslations[nutrientDetail.unit.lowercase(Locale.ROOT)] ?: nutrientDetail.unit
+
+                var quantityToShow = nutrientDetail.quantity
+                if (servingsForNutrition != null) {
+                    quantityToShow /= servingsForNutrition
+                }
+
+                if (nutrientNameTranslations.containsKey(nutrientLabelInLower) ||
+                    listOf("energy", "protein", "fat", "total lipid (fat)", "carbohydrate, by difference", "carbs", "fiber", "fiber, total dietary").contains(nutrientLabelInLower)
+                ) {
+                    nutritionBuilder.append("${translatedNutrientName}: ${String.format(Locale.getDefault(), "%.1f", quantityToShow)} ${translatedUnit}\n")
+                }
+            }
+        }
+
+        if (nutritionBuilder.isNotBlank()) {
+            textViewNutritionTitle.visibility = View.VISIBLE
+            textViewNutritionInfoDetailed.text = nutritionBuilder.toString().trim()
+            textViewNutritionInfoDetailed.visibility = View.VISIBLE
+        } else {
+            val caloriesFallback: Double?
+            val caloriesFallbackLabel: String
+
+            if (servingsForNutrition != null && recipe.calories != null) {
+                caloriesFallback = recipe.calories / servingsForNutrition
+                caloriesFallbackLabel = "Calorías (por porción):"
+                textViewNutritionTitle.text = "Información Nutricional (por porción)"
+            } else {
+                caloriesFallback = recipe.calories
+                caloriesFallbackLabel = "Calorías Totales:"
+                textViewNutritionTitle.text = "Información Nutricional (Total Receta)"
+            }
+
+            caloriesFallback?.let {
+                textViewNutritionTitle.visibility = View.VISIBLE
+                textViewNutritionInfoDetailed.text = "$caloriesFallbackLabel ${String.format(Locale.getDefault(), "%.0f kcal", it)}"
+                textViewNutritionInfoDetailed.visibility = View.VISIBLE
+            } ?: run {
+                textViewNutritionTitle.visibility = View.GONE
+                textViewNutritionInfoDetailed.visibility = View.GONE
+            }
+        }
+
+        // --- Poblar Fuente y URL ---
+        var sourceOrUrlExists = false
+        if (!recipe.source.isNullOrBlank()) {
+            textViewRecipeSourceDetail.text = "Fuente: ${recipe.source}"
+            textViewRecipeSourceDetail.visibility = View.VISIBLE
+            sourceOrUrlExists = true
+        } else {
+            textViewRecipeSourceDetail.visibility = View.GONE
+        }
+
+        if (!recipe.url.isNullOrBlank()) {
+            textViewRecipeUrlDetail.text = recipe.url
+            textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance()
+            textViewRecipeUrlDetail.visibility = View.VISIBLE
+            sourceOrUrlExists = true
+        } else {
+            textViewRecipeUrlDetail.visibility = View.GONE
+        }
+        textViewSourceUrlTitle.visibility = if(sourceOrUrlExists) View.VISIBLE else View.GONE
+
+
+        // --- Configurar FABs ---
+        updateFavoriteIcon(recipe.isFavorite)
+        fabFavorite.setOnClickListener {
+            recipe.isFavorite = !recipe.isFavorite
+            updateFavoriteIcon(recipe.isFavorite)
+            val action = if (recipe.isFavorite) "añadida a" else "eliminada de"
+            Toast.makeText(this, "Receta $action favoritos (Implementar Firestore)", Toast.LENGTH_SHORT).show()
+            // Aquí iría la lógica de Firestore para favoritos
+        }
+        fabAddToList.setOnClickListener {
+            addIngredientsToShoppingList(recipe)
+        }
+    }
+
+    private fun handleRecipeError() {
+        collapsingToolbar.title = "Error"
+        textViewRecipeLabelBody.text = "Error al cargar detalles" // Asegúrate que textViewRecipeLabelBody esté inicializado antes
+        Toast.makeText(this, "No se pudieron cargar los detalles.", Toast.LENGTH_LONG).show()
+        finish()
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
         if (isFav) {
-            fabFavorite.setImageResource(R.drawable.ic_favorite) // Icono de corazón relleno
+            fabFavorite.setImageResource(R.drawable.ic_favorite)
         } else {
-            fabFavorite.setImageResource(R.drawable.ic_favorite_border) // Icono de corazón vacío
+            fabFavorite.setImageResource(R.drawable.ic_favorite_border)
         }
     }
 
@@ -256,73 +342,47 @@ class RecipeDetailActivity : AppCompatActivity() {
             Toast.makeText(this, "Debes iniciar sesión para añadir a la lista.", Toast.LENGTH_SHORT).show()
             return
         }
-
         if (recipe.ingredientLines.isNullOrEmpty()) {
             Toast.makeText(this, "No hay ingredientes para añadir.", Toast.LENGTH_SHORT).show()
             return
         }
 
         Log.d(TAG, "addIngredientsToShoppingList - Recipe URI: '${recipe.uri}', Recipe Label: '${recipe.label}'")
-
-        val shoppingListCollection = db.collection("users").document(userId)
-            .collection("shoppingListItems")
-
-        var itemsAddedSuccessfully = 0
-        var itemsFailedToAdd = 0
-        val totalItemsToAttempt = recipe.ingredientLines.size
-
-        // Deshabilitar botón mientras se procesa (opcional)
-        // fabAddToList.isEnabled = false
+        val shoppingListCollection = db.collection("users").document(userId).collection("shoppingListItems")
+        val batch = db.batch()
+        var itemsToAttemptCount = 0
 
         recipe.ingredientLines.forEach { ingredientName ->
             if (ingredientName.isNotBlank()) {
+                itemsToAttemptCount++
+                Log.d(TAG, "Preparando para añadir: '$ingredientName'. Usando RecipeId: '${recipe.uri}', RecipeName: '${recipe.label}'")
                 val shoppingItemData = hashMapOf(
                     "name" to ingredientName.trim(),
                     "isPurchased" to false,
-                    "recipeId" to recipe.uri,       // <--- ESTA LÍNEA ES CRUCIAL
-                    "recipeName" to recipe.label,   // <--- ESTA LÍNEA ES CRUCIAL
+                    "recipeId" to recipe.uri,
+                    "recipeName" to recipe.label,
                     "addedAt" to FieldValue.serverTimestamp()
                 )
-
-                // Usamos .add() para que Firestore genere un ID único para cada ítem
-                shoppingListCollection.add(shoppingItemData)
-                    .addOnSuccessListener {
-                        itemsAddedSuccessfully++
-                        if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
-                            showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        itemsFailedToAdd++
-                        Log.w(TAG, "Error al añadir '$ingredientName' a la lista de compra", e)
-                        if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
-                            showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
-                        }
-                    }
-            } else {
-                // Si un ingrediente está en blanco, se cuenta como fallo para el feedback final
-                itemsFailedToAdd++
-                if (itemsAddedSuccessfully + itemsFailedToAdd == totalItemsToAttempt) {
-                    showShoppingListFeedback(itemsAddedSuccessfully, itemsFailedToAdd)
-                }
+                val newDocRef = shoppingListCollection.document()
+                batch.set(newDocRef, shoppingItemData)
             }
         }
-    }
 
-    private fun showShoppingListFeedback(successful: Int, failed: Int) {
-        // Habilitar botón de nuevo (opcional)
-        // fabAddToList.isEnabled = true
-
-        if (successful > 0 && failed == 0) {
-            Toast.makeText(this, "$successful ingrediente(s) añadido(s) a la lista.", Toast.LENGTH_LONG).show()
-        } else if (successful > 0 && failed > 0) {
-            Toast.makeText(this, "$successful ingrediente(s) añadido(s), $failed no se pudieron añadir.", Toast.LENGTH_LONG).show()
-        } else if (successful == 0 && failed > 0) {
-            Toast.makeText(this, "No se pudieron añadir los ingredientes a la lista.", Toast.LENGTH_LONG).show()
+        if (itemsToAttemptCount == 0) {
+            Toast.makeText(this, "No hay ingredientes válidos para añadir.", Toast.LENGTH_SHORT).show()
+            return
         }
-        // No mostrar nada si no había ingredientes para intentar
-    }
 
+        batch.commit()
+            .addOnSuccessListener {
+                Log.d(TAG, "$itemsToAttemptCount ingredientes de '${recipe.label}' procesados para añadir a la lista.")
+                Toast.makeText(this, "$itemsToAttemptCount ingrediente(s) añadido(s) a la lista.", Toast.LENGTH_LONG).show()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error al añadir ingredientes de '${recipe.label}' a la lista con batch.", e)
+                Toast.makeText(this, "Error al añadir ingredientes: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
