@@ -187,7 +187,7 @@ class ShoppingListFragment : Fragment() {
                     try {
                         val item = document.toObject<ShoppingListItem>()
                         item.documentId = document.id
-                        // ----> LOG QUE TE PEDÍ <----
+                        // ----> LOG QUE TE PEDÍ <----d
                         Log.d(TAG, "Item Leído de Firestore: Name='${item.name}', RecipeId='${item.recipeId}', RecipeName='${item.recipeName}', DocId='${item.documentId}', Purchased=${item.isPurchased}, AddedAt=${item.addedAt}")
                         rawShoppingListItems.add(item)
                     } catch (ex: Exception) {
