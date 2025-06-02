@@ -28,7 +28,7 @@
         android:layout_height="40dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="Eliminar de la despensa"
-        app:srcCompat="@drawable/delete"
+        app:srcCompat="@drawable/ic_delete"
         app:tint="?attr/colorControlNormal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"

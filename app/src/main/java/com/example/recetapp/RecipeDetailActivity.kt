@@ -262,6 +262,8 @@ class RecipeDetailActivity : AppCompatActivity() {
             return
         }
 
+        Log.d(TAG, "addIngredientsToShoppingList - Recipe URI: '${recipe.uri}', Recipe Label: '${recipe.label}'")
+
         val shoppingListCollection = db.collection("users").document(userId)
             .collection("shoppingListItems")
 
@@ -275,8 +277,10 @@ class RecipeDetailActivity : AppCompatActivity() {
         recipe.ingredientLines.forEach { ingredientName ->
             if (ingredientName.isNotBlank()) {
                 val shoppingItemData = hashMapOf(
-                    "name" to ingredientName, // El string completo del ingrediente
+                    "name" to ingredientName.trim(),
                     "isPurchased" to false,
+                    "recipeId" to recipe.uri,       // <--- ESTA LÍNEA ES CRUCIAL
+                    "recipeName" to recipe.label,   // <--- ESTA LÍNEA ES CRUCIAL
                     "addedAt" to FieldValue.serverTimestamp()
                 )
 
