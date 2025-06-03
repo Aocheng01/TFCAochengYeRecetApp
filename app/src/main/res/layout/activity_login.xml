@@ -4,27 +4,36 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurfaceContainerLowest" android:padding="16dp" tools:context=".LoginActivity">
+    android:background="?attr/colorSurfaceContainerLowest"
+    android:padding="16dp"
+    tools:context=".LoginActivity">
 
     <ImageView
-        android:id="@+id/imageViewAppLogo" android:layout_width="100dp"
+        android:id="@+id/imageViewAppLogo"
+        android:layout_width="100dp"
         android:layout_height="100dp"
         android:layout_marginTop="48dp"
-        android:contentDescription="@string/app_logo_description" app:layout_constraintEnd_toEndOf="parent"
+        android:contentDescription="@string/app_logo_description"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/ic_launcher_round" /> <TextView
-    android:id="@+id/textViewLoginTitle" android:layout_width="wrap_content"
-    android:layout_height="wrap_content"
-    android:layout_marginTop="24dp"
-    android:text="Bienvenido a RecetApp" android:textAppearance="?attr/textAppearanceHeadlineSmall"
-    android:textColor="?attr/colorOnSurface"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@+id/imageViewAppLogo" />
+        app:srcCompat="@mipmap/ic_launcher_round" />
 
     <TextView
-        android:id="@+id/textViewLoginSubtitle" android:layout_width="wrap_content"
+        android:id="@+id/textViewLoginTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:text="Bienvenido a RecetApp"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewAppLogo" />
+
+    <TextView
+        android:id="@+id/textViewLoginSubtitle"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:text="Inicia sesión o regístrate para explorar recetas"
@@ -35,7 +44,9 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLoginTitle" />
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/textFieldLayoutEmail" style="?attr/textInputFilledStyle" android:layout_width="0dp"
+        android:id="@+id/textFieldLayoutEmail"
+        style="?attr/textInputFilledStyle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
@@ -47,13 +58,16 @@
         app:layout_constraintTop_toBottomOf="@+id/textViewLoginSubtitle">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextLoginEmail" android:layout_width="match_parent"
+            android:id="@+id/editTextLoginEmail"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textEmailAddress" />
     </com.google.android.material.textfield.TextInputLayout>
 
     <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/textFieldLayoutPassword" style="?attr/textInputFilledStyle" android:layout_width="0dp"
+        android:id="@+id/textFieldLayoutPassword"
+        style="?attr/textInputFilledStyle"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="16dp"
@@ -66,13 +80,15 @@
         app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutEmail">
 
         <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/editTextLoginPassword" android:layout_width="match_parent"
+            android:id="@+id/editTextLoginPassword"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="textPassword" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
-        android:id="@+id/buttonLoginEmail" android:layout_width="0dp"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonLoginEmail"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="24dp"
@@ -84,8 +100,9 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textFieldLayoutPassword" />
 
-    <Button
-        android:id="@+id/buttonRegisterEmail" style="?attr/materialButtonOutlinedStyle"
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonRegisterEmail"
+        style="?attr/materialButtonOutlinedStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
@@ -99,7 +116,8 @@
         app:layout_constraintTop_toBottomOf="@+id/buttonLoginEmail" />
 
     <TextView
-        android:id="@+id/textViewOr" android:layout_width="wrap_content"
+        android:id="@+id/textViewOr"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="o inicia sesión con"
@@ -110,7 +128,8 @@
         app:layout_constraintTop_toBottomOf="@+id/buttonRegisterEmail" />
 
     <com.google.android.gms.common.SignInButton
-        android:id="@+id/buttonGoogleSignIn" android:layout_width="0dp"
+        android:id="@+id/buttonGoogleSignIn"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="24dp"
         android:layout_marginTop="12dp"

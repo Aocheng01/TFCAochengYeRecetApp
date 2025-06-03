@@ -9,7 +9,8 @@
     android:layout_marginTop="2dp"
     android:layout_marginBottom="2dp"
     app:cardElevation="1dp"
-    app:cardCornerRadius="4dp">
+    app:cardCornerRadius="4dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -32,13 +33,13 @@
             app:layout_constraintStart_toEndOf="@id/indentationSpace"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>
-
         <TextView
             android:id="@+id/textViewShoppingItemName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
             android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurface"
             app:layout_constraintStart_toEndOf="@id/checkBoxShoppingItemPurchased"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"
@@ -53,7 +54,7 @@
             android:contentDescription="Eliminar ítem"
             android:padding="8dp"
             android:src="@drawable/ic_delete"
-            app:tint="?attr/colorOnSurfaceVariant"
+            app:tint="?attr/colorControlNormal"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintBottom_toBottomOf="parent"/>

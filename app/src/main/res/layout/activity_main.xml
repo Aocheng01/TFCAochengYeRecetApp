@@ -4,14 +4,16 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="?attr/colorSurfaceContainer"
+    android:background="?attr/colorSurface"
     tools:context=".MainActivity">
 
     <com.google.android.material.appbar.MaterialToolbar
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
-        android:background="@android:color/transparent" android:elevation="0dp" android:theme="?attr/actionBarTheme"
+        android:background="?attr/colorSurfaceContainer"
+        android:elevation="4dp"
+        android:theme="?attr/actionBarTheme"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -19,16 +21,16 @@
         app:titleTextColor="?attr/colorOnSurface">
 
         <ImageButton
-        android:id="@+id/imageButtonUserProfile"
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="end"
-        android:background="?attr/actionBarItemBackground"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:contentDescription="."
-        app:srcCompat="@drawable/user"
-        app:tint="?attr/colorOnSurface" />
+            android:id="@+id/imageButtonUserProfile"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="end"
+            android:background="?attr/actionBarItemBackground"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:contentDescription="Perfil de usuario"
+            app:srcCompat="@drawable/user"
+            app:tint="?attr/colorOnSurface" />
     </com.google.android.material.appbar.MaterialToolbar>
 
     <com.google.android.material.tabs.TabLayout
@@ -46,8 +48,7 @@
         app:tabIndicatorFullWidth="true"
         app:tabSelectedTextColor="?attr/colorPrimary"
         app:tabTextColor="?attr/colorOnSurfaceVariant"
-        app:tabRippleColor="?attr/colorPrimaryVariant" />
-
+        app:tabRippleColor="?attr/colorPrimary" />
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/viewPager"
         android:layout_width="0dp"
