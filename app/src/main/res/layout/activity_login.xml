@@ -10,14 +10,14 @@
 
     <ImageView
         android:id="@+id/imageViewAppLogo"
-        android:layout_width="100dp"
-        android:layout_height="100dp"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
         android:layout_marginTop="48dp"
         android:contentDescription="@string/app_logo_description"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@mipmap/ic_launcher_round" />
+        app:srcCompat="@drawable/ic_logo"/>
 
     <TextView
         android:id="@+id/textViewLoginTitle"

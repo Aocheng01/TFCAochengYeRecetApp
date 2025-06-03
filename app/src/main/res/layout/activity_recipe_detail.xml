@@ -156,14 +156,14 @@
                     style="@style/Widget.Material3.Chip.Assist"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:chipBackgroundColor="?attr/colorSecondaryContainer"
+                    app:chipBackgroundColor="#e9c46a"
                     android:textColor="?attr/colorOnSecondaryContainer"
                     tools:text="400-500 kcal"/>
                 <com.google.android.material.chip.Chip
                     style="@style/Widget.Material3.Chip.Assist"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    app:chipBackgroundColor="?attr/colorSecondaryContainer"
+                    app:chipBackgroundColor="#e9c46a"
                     android:textColor="?attr/colorOnSecondaryContainer"
                     tools:text="Almuerzo"/>
             </com.google.android.material.chip.ChipGroup>

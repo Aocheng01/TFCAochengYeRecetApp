@@ -1,12 +1,16 @@
 package com.example.recetapp
 
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.util.Log
+import android.util.TypedValue
+import android.view.ContextThemeWrapper
 import android.view.View
 import android.widget.ImageView
 import android.widget.TextView
@@ -229,13 +233,31 @@ class RecipeDetailActivity : AppCompatActivity() {
         val allLabels = mutableListOf<String>()
         recipe.dietLabels?.let { allLabels.addAll(it) }
         recipe.healthLabels?.let { allLabels.addAll(it) }
+
         if (allLabels.isNotEmpty()) {
             textViewLabelsTitle.visibility = View.VISIBLE
             chipGroupLabels.visibility = View.VISIBLE
             allLabels.distinct().forEach { labelString ->
-                val chip = Chip(this)
+                // 1. Crea el Chip aplicando el estilo deseado
+                val chip = Chip(ContextThemeWrapper(this, com.google.android.material.R.style.Widget_Material3_Chip_Assist))
+
                 val translatedLabel = dietHealthLabelTranslations[labelString.lowercase(Locale.ROOT)] ?: labelString
                 chip.text = translatedLabel
+
+                // 2. Establece el color de fondo específico
+                chip.chipBackgroundColor = ColorStateList.valueOf(Color.parseColor("#e9c46a"))
+
+                // 3. (Opcional pero recomendado) Establece el color del texto como en el XML
+                //    Si el estilo Widget.Material3.Chip.Assist ya define un color de texto adecuado,
+                //    esto podría no ser estrictamente necesario, pero para replicar tu XML:
+                val textColorAttr = com.google.android.material.R.attr.colorOnSecondaryContainer // Usa el atributo correcto de Material 3
+                val typedValue = TypedValue()
+                theme.resolveAttribute(textColorAttr, typedValue, true)
+                chip.setTextColor(typedValue.data)
+                // Alternativamente, si el estilo ya lo maneja bien:
+                // chip.setTextColor(ContextCompat.getColor(this, R.color.tu_color_de_texto_para_chip))
+
+
                 chipGroupLabels.addView(chip)
             }
         } else {
