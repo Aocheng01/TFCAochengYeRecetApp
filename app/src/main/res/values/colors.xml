@@ -1,5 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-</resources>
+    <color name="palette_dark_teal">#264653</color>
+    <color name="palette_persian_green">#2A9D8F</color>
+    <color name="palette_saffron_yellow">#E9C46A</color>
+    <color name="palette_sandy_brown">#F4A261</color>
+    <color name="palette_burnt_sienna_red">#E76F51</color>
+
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <color name="light_theme_background">#FFFBFF</color>
+    <color name="light_theme_on_background">#1C1B1F</color>
+    <color name="light_theme_surface">#FFFBFF</color>
+    <color name="light_theme_on_surface">#1C1B1F</color>
+    <color name="light_theme_surface_variant">#E7E0EC</color>
+    <color name="light_theme_on_surface_variant">#49454F</color>
+    <color name="light_theme_outline">#79747E</color>
+    <color name="light_theme_primary_container_alt">#D0EAE7</color> <color name="light_theme_secondary_container_alt">#F0E8D1</color> <color name="light_theme_tertiary_container_alt">#FBE5D7</color> <color name="light_theme_error_container">#F9DEDC</color>
+    <color name="light_theme_on_error_container">#410E0B</color>
+    <color name="light_theme_surface_container_low">#F4F4F4</color> <color name="dark_theme_background">#1C1B1F</color>
+    <color name="dark_theme_on_background">#E6E1E5</color>
+    <color name="dark_theme_surface">#1C1B1F</color>
+    <color name="dark_theme_on_surface">#E6E1E5</color>
+    <color name="dark_theme_surface_variant">#49454F</color>
+    <color name="dark_theme_on_surface_variant">#CAC4D0</color>
+    <color name="dark_theme_outline">#938F99</color>
+    <color name="dark_theme_error_primary_alt">#FFB4AB</color> <color name="dark_theme_on_error_alt">#690005</color>
+    <color name="dark_theme_error_container">#93000A</color>
+    <color name="dark_theme_on_error_container">#FFDAD6</color>
+    <color name="dark_theme_surface_container_low">#2D2F2F</color> </resources>

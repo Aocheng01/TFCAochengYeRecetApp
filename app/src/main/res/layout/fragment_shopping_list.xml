@@ -5,42 +5,47 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
     tools:context=".fragments.ShoppingListFragment">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayoutShoppingItem"
+        style="?attr/textInputFilledStyle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
         android:layout_marginTop="16dp"
         android:layout_marginEnd="8dp"
+        android:hint="Añadir ítem a la lista"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@+id/buttonAddShoppingItem">
+        app:layout_constraintEnd_toStartOf="@+id/buttonAddShoppingItem"
+        app:endIconMode="clear_text">
+
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTextShoppingItem"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Añadir ítem a la lista"
             android:imeOptions="actionDone"
             android:inputType="textCapSentences" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonAddShoppingItem"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_marginEnd="16dp"
         android:text="Añadir"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textInputLayoutShoppingItem"
         app:layout_constraintBottom_toBottomOf="@id/textInputLayoutShoppingItem"/>
-
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewShoppingListItems"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
+        android:clipToPadding="false"
+        android:paddingBottom="8dp"
         app:layout_constraintTop_toBottomOf="@id/textInputLayoutShoppingItem"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -53,6 +58,7 @@
         android:layout_height="wrap_content"
         android:text="Tu lista de la compra está vacía."
         android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/textInputLayoutShoppingItem"
         app:layout_constraintStart_toStartOf="parent"
@@ -60,7 +66,7 @@
         app:layout_constraintBottom_toTopOf="@+id/buttonClearAllShoppingList"
         app:layout_constraintVertical_bias="0.4"/>
 
-    <Button
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonClearAllShoppingList"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -68,8 +74,13 @@
         android:layout_marginEnd="16dp"
         android:layout_marginBottom="16dp"
         android:text="Borrar Toda la Lista"
-        app:icon="@drawable/ic_delete" style="?attr/materialButtonOutlinedStyle"
-        android:visibility="gone" app:layout_constraintBottom_toBottomOf="parent"
+        app:icon="@drawable/ic_delete"
+        style="?attr/materialButtonOutlinedStyle"
+        app:strokeColor="?attr/colorError"
+        android:textColor="?attr/colorError"
+        app:iconTint="?attr/colorError"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 

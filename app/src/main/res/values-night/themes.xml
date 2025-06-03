@@ -1,7 +1,28 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.RecetApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="colorPrimary">@color/palette_persian_green</item> <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/palette_dark_teal</item> <item name="colorOnPrimaryContainer">@color/palette_saffron_yellow</item> <item name="colorSecondary">@color/palette_saffron_yellow</item>
+        <item name="colorOnSecondary">@color/palette_dark_teal</item>
+        <item name="colorSecondaryContainer">@color/palette_dark_teal</item> <item name="colorOnSecondaryContainer">@color/palette_saffron_yellow</item>
+
+        <item name="colorTertiary">@color/palette_sandy_brown</item>
+        <item name="colorOnTertiary">@color/palette_dark_teal</item>
+        <item name="colorTertiaryContainer">@color/palette_dark_teal</item> <item name="colorOnTertiaryContainer">@color/palette_sandy_brown</item>
+
+        <item name="colorError">@color/dark_theme_error_primary_alt</item>
+        <item name="colorOnError">@color/dark_theme_on_error_alt</item>
+        <item name="colorErrorContainer">@color/dark_theme_error_container</item>
+        <item name="colorOnErrorContainer">@color/dark_theme_on_error_container</item>
+
+        <item name="android:colorBackground">@color/dark_theme_background</item>
+        <item name="colorOnBackground">@color/light_theme_surface_container_low</item> <item name="colorSurface">@color/dark_theme_surface</item>
+        <item name="colorOnSurface">@color/light_theme_surface_container_low</item> <item name="colorSurfaceVariant">@color/dark_theme_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/dark_theme_on_surface_variant</item>
+        <item name="colorOutline">@color/dark_theme_outline</item>
+
+        <item name="colorSurfaceContainerLow">@color/dark_theme_surface_container_low</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
     </style>
+
+    <style name="Theme.RecetApp" parent="Base.Theme.RecetApp" />
 </resources>

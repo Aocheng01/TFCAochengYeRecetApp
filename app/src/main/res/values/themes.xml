@@ -1,9 +1,33 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.RecetApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
-    </style>
+        <item name="colorPrimary">@color/palette_dark_teal</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorPrimaryContainer">@color/palette_persian_green</item>
+        <item name="colorOnPrimaryContainer">@color/white</item>
+
+        <item name="colorSecondary">@color/palette_persian_green</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="colorSecondaryContainer">@color/palette_saffron_yellow</item>
+        <item name="colorOnSecondaryContainer">@color/palette_dark_teal</item>
+
+        <item name="colorTertiary">@color/palette_saffron_yellow</item>
+        <item name="colorOnTertiary">@color/palette_dark_teal</item>
+        <item name="colorTertiaryContainer">@color/palette_sandy_brown</item>
+        <item name="colorOnTertiaryContainer">@color/palette_dark_teal</item>
+
+        <item name="colorError">@color/palette_burnt_sienna_red</item>
+        <item name="colorOnError">@color/white</item>
+        <item name="colorErrorContainer">@color/light_theme_error_container</item>
+        <item name="colorOnErrorContainer">@color/light_theme_on_error_container</item>
+
+        <item name="android:colorBackground">@color/light_theme_background</item>
+        <item name="colorOnBackground">@color/palette_dark_teal</item> <item name="colorSurface">@color/light_theme_surface</item>
+        <item name="colorOnSurface">@color/palette_dark_teal</item> <item name="colorSurfaceVariant">@color/light_theme_surface_variant</item>
+        <item name="colorOnSurfaceVariant">@color/light_theme_on_surface_variant</item>
+        <item name="colorOutline">@color/light_theme_outline</item>
+
+        <item name="colorSurfaceContainerLow">@color/light_theme_surface_container_low</item>
+        <item name="android:statusBarColor">?attr/colorPrimaryVariant</item> </style>
 
     <style name="Theme.RecetApp" parent="Base.Theme.RecetApp" />
 </resources>
