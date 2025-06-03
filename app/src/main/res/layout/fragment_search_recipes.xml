@@ -17,6 +17,7 @@
         android:layout_marginEnd="8dp"
         android:hint="Buscar recetas (ej. pizza, pollo...)"
         app:endIconMode="clear_text"
+        app:boxBackgroundColor="@android:color/transparent"
         app:layout_constraintEnd_toStartOf="@+id/buttonSearch"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -40,33 +41,88 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/textInputLayoutSearchQuery" />
 
+    <androidx.cardview.widget.CardView
+        android:id="@+id/cardViewWelcome"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="24dp"
+        android:visibility="visible"
+        app:cardElevation="4dp"
+        app:cardCornerRadius="12dp"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayoutSearchQuery"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/imageViewDecorativeSearch"
+                android:layout_width="0dp"
+                android:layout_height="670dp"
+                android:src="@drawable/fotoprincipal"
+                android:scaleType="centerCrop"
+                android:alpha="0.85"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"/>
+
+            <TextView
+                android:id="@+id/textViewWelcome"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:text="¡Bienvenido a RecetApp!"
+                android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
+                android:textColor="@android:color/white"
+                android:background="#66000000"
+                android:padding="16dp"
+                android:gravity="center_horizontal"
+                android:layout_marginTop="24dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                app:layout_constraintTop_toTopOf="@+id/imageViewDecorativeSearch"
+                app:layout_constraintStart_toStartOf="@+id/imageViewDecorativeSearch"
+                app:layout_constraintEnd_toEndOf="@+id/imageViewDecorativeSearch" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
+
     <TextView
         android:id="@+id/textViewAlternativeSearchInfo"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"
+        android:padding="8dp"
+        android:background="?attr/colorSurfaceContainerHighest"
         android:textAlignment="center"
-        android:textAppearance="?attr/textAppearanceCaption"
+        android:textAppearance="?attr/textAppearanceBody1"
         android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone" app:layout_constraintTop_toBottomOf="@+id/textInputLayoutSearchQuery" app:layout_constraintStart_toStartOf="parent"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@+id/textInputLayoutSearchQuery"
+        app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        tools:text="Mostrando sugerencias basadas en algunos ingredientes."
-        tools:visibility="visible"/>
+        tools:text="Se encontraron N recetas para X."
+        tools:visibility="gone"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerViewRecipes"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:layout_marginTop="8dp"
-        android:layout_marginBottom="8dp"
         android:clipToPadding="false"
         android:paddingBottom="8dp"
-        app:layout_constraintTop_toBottomOf="@+id/textViewAlternativeSearchInfo" app:layout_constraintBottom_toTopOf="@+id/buttonLoadMore"
+        app:layout_constraintTop_toBottomOf="@+id/textViewAlternativeSearchInfo"
+        app:layout_constraintBottom_toTopOf="@+id/buttonLoadMore"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:listitem="@layout/item_recipe" />
+        tools:listitem="@layout/item_recipe"
+        android:visibility="gone"
+        tools:visibility="visible"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/buttonLoadMore"
@@ -79,6 +135,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        tools:visibility="visible" />
+        tools:visibility="gone" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
