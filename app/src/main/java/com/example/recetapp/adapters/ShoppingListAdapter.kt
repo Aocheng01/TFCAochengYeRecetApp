@@ -8,7 +8,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.ImageButton
-import android.widget.Space // Importa Space
+import android.widget.Space
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
@@ -20,18 +20,22 @@ import com.example.recetapp.data.ShoppingListItem
 class ShoppingListAdapter(
     private val onItemCheckedChanged: (shoppingListItem: ShoppingListItem, documentId: String, isChecked: Boolean) -> Unit,
     private val onDeleteClick: (shoppingListItem: ShoppingListItem, documentId: String) -> Unit,
-    private val onRecipeHeaderClick: (recipeId: String, recipeName: String) -> Unit
+    private val onRecipeHeaderClick: (recipeId: String, recipeName: String) -> Unit, // Puede usarse para toggle o para otra acción
+    // Nuevos Callbacks
+    private val onToggleRecipeExpandClick: (recipeId: String) -> Unit,
+    private val onDeleteRecipeClick: (recipeId: String, recipeName: String) -> Unit
 ) : ListAdapter<ShoppingDisplayItem, RecyclerView.ViewHolder>(ShoppingDisplayItemDiffCallback()) {
 
     companion object {
         private const val VIEW_TYPE_RECIPE_HEADER = 0
-        private const val VIEW_TYPE_SHOPPING_ITEM = 1 // Unificado para RecipeIngredient y StandaloneItem
+        private const val VIEW_TYPE_SHOPPING_ITEM = 1
     }
 
     override fun getItemViewType(position: Int): Int {
         return when (getItem(position)) {
             is ShoppingDisplayItem.RecipeHeader -> VIEW_TYPE_RECIPE_HEADER
             is ShoppingDisplayItem.RecipeIngredient, is ShoppingDisplayItem.StandaloneItem -> VIEW_TYPE_SHOPPING_ITEM
+            // else -> throw IllegalStateException("Unknown view type at position $position") // Mejor manejo para casos desconocidos
         }
     }
 
@@ -58,7 +62,7 @@ class ShoppingListAdapter(
                 when (displayItem) {
                     is ShoppingDisplayItem.RecipeIngredient -> holder.bind(displayItem.shoppingListItem, displayItem.originalDocumentId, true)
                     is ShoppingDisplayItem.StandaloneItem -> holder.bind(displayItem.shoppingListItem, displayItem.originalDocumentId, false)
-                    else -> {} // No debería ocurrir si getItemViewType es correcto
+                    else -> {}
                 }
             }
         }
@@ -66,11 +70,36 @@ class ShoppingListAdapter(
 
     inner class RecipeHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val recipeNameTextView: TextView = itemView.findViewById(R.id.textViewRecipeNameHeader)
+        // Nuevos botones
+        private val toggleExpandButton: ImageButton = itemView.findViewById(R.id.buttonToggleExpandRecipe)
+        private val deleteRecipeButton: ImageButton = itemView.findViewById(R.id.buttonDeleteRecipe)
+
         fun bind(headerItem: ShoppingDisplayItem.RecipeHeader) {
-            recipeNameTextView.text = "${headerItem.recipeName}:"
+            recipeNameTextView.text = headerItem.recipeName // Ya no es necesario añadir ":" aquí si el layout lo gestiona bien
+
+            // Configurar icono de expansión
+            if (headerItem.isExpanded) {
+                toggleExpandButton.setImageResource(R.drawable.ic_keyboard_arrow_up)
+            } else {
+                toggleExpandButton.setImageResource(R.drawable.ic_keyboard_arrow_down)
+            }
+
+            // Click en el layout del header para expandir/colapsar (opcional, además del botón)
             itemView.setOnClickListener {
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
-                    onRecipeHeaderClick(headerItem.recipeId, headerItem.recipeName)
+                    onRecipeHeaderClick(headerItem.recipeId, headerItem.recipeName) // O llama a onToggleRecipeExpandClick directamente
+                }
+            }
+
+            toggleExpandButton.setOnClickListener {
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
+                    onToggleRecipeExpandClick(headerItem.recipeId)
+                }
+            }
+
+            deleteRecipeButton.setOnClickListener {
+                if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
+                    onDeleteRecipeClick(headerItem.recipeId, headerItem.recipeName)
                 }
             }
         }
@@ -80,7 +109,7 @@ class ShoppingListAdapter(
         private val itemNameTextView: TextView = itemView.findViewById(R.id.textViewShoppingItemName)
         private val purchasedCheckBox: CheckBox = itemView.findViewById(R.id.checkBoxShoppingItemPurchased)
         private val deleteButton: ImageButton = itemView.findViewById(R.id.imageButtonDeleteShoppingItem)
-        private val indentationSpace: Space = itemView.findViewById(R.id.indentationSpace) // Referencia al Space
+        private val indentationSpace: Space = itemView.findViewById(R.id.indentationSpace)
 
         fun bind(item: ShoppingListItem, documentId: String, isRecipeIngredient: Boolean) {
             itemNameTextView.text = item.name
@@ -88,14 +117,13 @@ class ShoppingListAdapter(
             purchasedCheckBox.isChecked = item.isPurchased
             applyTextPaintFlags(itemNameTextView, item.isPurchased)
 
-            // Controlar la indentación usando el ancho del Space
-            val indentPx = if (isRecipeIngredient) dpToPx(24, itemView.context) else 0 // 24dp de indentación para ingredientes de receta
+            val indentPx = if (isRecipeIngredient) dpToPx(24, itemView.context) else 0
             indentationSpace.layoutParams.width = indentPx
-            indentationSpace.requestLayout() // Solicitar re-layout para aplicar el cambio de ancho
+            indentationSpace.requestLayout()
 
             purchasedCheckBox.setOnCheckedChangeListener { _, isChecked ->
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
-                    val currentDisplayItem = getItem(bindingAdapterPosition) // Obtener el item actual del adapter
+                    val currentDisplayItem = getItem(bindingAdapterPosition)
                     val actualListItem = when(currentDisplayItem) {
                         is ShoppingDisplayItem.RecipeIngredient -> currentDisplayItem.shoppingListItem
                         is ShoppingDisplayItem.StandaloneItem -> currentDisplayItem.shoppingListItem
@@ -135,25 +163,32 @@ class ShoppingListAdapter(
     }
 }
 
-// DiffUtil.ItemCallback se mantiene igual que en la versión anterior
+// DiffUtil.ItemCallback no necesita cambios si RecipeHeader es una data class,
+// ya que la comparación por defecto de 'areContentsTheSame' con 'oldItem == newItem'
+// comparará todos los campos, incluyendo 'isExpanded'.
 class ShoppingDisplayItemDiffCallback : DiffUtil.ItemCallback<ShoppingDisplayItem>() {
     override fun areItemsTheSame(oldItem: ShoppingDisplayItem, newItem: ShoppingDisplayItem): Boolean {
         return when {
             oldItem is ShoppingDisplayItem.RecipeHeader && newItem is ShoppingDisplayItem.RecipeHeader ->
                 oldItem.recipeId == newItem.recipeId
             oldItem is ShoppingDisplayItem.RecipeIngredient && newItem is ShoppingDisplayItem.RecipeIngredient ->
-                oldItem.originalDocumentId == newItem.originalDocumentId
+                oldItem.originalDocumentId == newItem.originalDocumentId // Compara por ID único del item
             oldItem is ShoppingDisplayItem.StandaloneItem && newItem is ShoppingDisplayItem.StandaloneItem ->
-                oldItem.originalDocumentId == newItem.originalDocumentId
+                oldItem.originalDocumentId == newItem.originalDocumentId // Compara por ID único del item
             else -> false
         }
     }
 
     override fun areContentsTheSame(oldItem: ShoppingDisplayItem, newItem: ShoppingDisplayItem): Boolean {
+        // Para data classes, la comparación '==' compara todos los campos.
+        // Para RecipeIngredient y StandaloneItem, podríamos querer comparar el shoppingListItem interno.
         return when {
-            oldItem is ShoppingDisplayItem.RecipeHeader && newItem is ShoppingDisplayItem.RecipeHeader -> oldItem == newItem
-            oldItem is ShoppingDisplayItem.RecipeIngredient && newItem is ShoppingDisplayItem.RecipeIngredient -> oldItem.shoppingListItem == newItem.shoppingListItem
-            oldItem is ShoppingDisplayItem.StandaloneItem && newItem is ShoppingDisplayItem.StandaloneItem -> oldItem.shoppingListItem == newItem.shoppingListItem
+            oldItem is ShoppingDisplayItem.RecipeHeader && newItem is ShoppingDisplayItem.RecipeHeader ->
+                oldItem == newItem // Compara recipeId, recipeName, y isExpanded
+            oldItem is ShoppingDisplayItem.RecipeIngredient && newItem is ShoppingDisplayItem.RecipeIngredient ->
+                oldItem.shoppingListItem == newItem.shoppingListItem && oldItem.originalDocumentId == newItem.originalDocumentId
+            oldItem is ShoppingDisplayItem.StandaloneItem && newItem is ShoppingDisplayItem.StandaloneItem ->
+                oldItem.shoppingListItem == newItem.shoppingListItem && oldItem.originalDocumentId == newItem.originalDocumentId
             else -> false
         }
     }

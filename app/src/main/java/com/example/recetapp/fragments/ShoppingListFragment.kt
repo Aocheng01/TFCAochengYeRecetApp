@@ -18,7 +18,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.R
-import com.example.recetapp.adapters.ShoppingListAdapter // Asumo que tienes este adaptador
+import com.example.recetapp.adapters.ShoppingListAdapter
 import com.example.recetapp.data.ShoppingDisplayItem
 import com.example.recetapp.data.ShoppingListItem
 import com.google.android.material.textfield.TextInputEditText
@@ -48,6 +48,9 @@ class ShoppingListFragment : Fragment() {
     private lateinit var db: FirebaseFirestore
     private var shoppingListListenerRegistration: ListenerRegistration? = null
 
+    private val recipeExpandedStates = mutableMapOf<String, Boolean>()
+    private var lastRawShoppingListItems: List<ShoppingListItem>? = null
+
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
@@ -72,12 +75,14 @@ class ShoppingListFragment : Fragment() {
         super.onStart()
         Log.d(TAG, "onStart: Adjuntando listener si el usuario está logueado.")
         if (auth.currentUser != null) {
+            lastRawShoppingListItems = null // Reset cache
             attachShoppingListListener()
         } else {
             Log.w(TAG, "onStart: Usuario no logueado. Limpiando lista.")
             if (::shoppingListAdapter.isInitialized) {
                 shoppingListAdapter.submitList(emptyList())
             }
+            lastRawShoppingListItems = emptyList()
             updateEmptyViewAndClearButtonVisibility(emptyList())
         }
     }
@@ -91,16 +96,21 @@ class ShoppingListFragment : Fragment() {
     private fun setupRecyclerView() {
         shoppingListAdapter = ShoppingListAdapter(
             onItemCheckedChanged = { shoppingListItem, documentId, isChecked ->
-                Log.d(TAG, "ItemCheckedChanged: docId=$documentId, isChecked=$isChecked")
                 updateItemPurchasedStatusInFirestore(documentId, isChecked)
             },
             onDeleteClick = { shoppingListItem, documentId ->
-                Log.d(TAG, "DeleteClick: item=${shoppingListItem.name}, docId=$documentId")
                 showDeleteConfirmationDialog(shoppingListItem, documentId)
             },
             onRecipeHeaderClick = { recipeId, recipeName ->
-                Log.d(TAG, "RecipeHeaderClick: recipeName=$recipeName, recipeId=$recipeId")
-                Toast.makeText(requireContext(), "Receta: $recipeName", Toast.LENGTH_SHORT).show()
+                // El click en el cuerpo del header también expande/colapsa
+                toggleRecipeExpandedState(recipeId)
+            },
+            // Nuevos Callbacks
+            onToggleRecipeExpandClick = { recipeId ->
+                toggleRecipeExpandedState(recipeId)
+            },
+            onDeleteRecipeClick = { recipeId, recipeName ->
+                showDeleteRecipeConfirmationDialog(recipeId, recipeName)
             }
         )
         recyclerViewShoppingListItems.layoutManager = LinearLayoutManager(requireContext())
@@ -119,7 +129,7 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Confirmar Eliminación")
             .setMessage("¿Eliminar '${item.name}' de la lista?")
-            .setIcon(R.drawable.ic_delete)
+            .setIcon(R.drawable.ic_delete) // Asegúrate que ic_delete exista
             .setPositiveButton("Eliminar") { _, _ -> deleteShoppingItemFromFirestore(documentId) }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -129,13 +139,12 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Borrar Toda la Lista")
             .setMessage("¿Estás seguro de que quieres eliminar TODOS los ítems? Esta acción no se puede deshacer.")
-            .setIcon(R.drawable.ic_delete)
+            .setIcon(R.drawable.ic_delete) // Puedes usar ic_delete_sweep o ic_delete
             .setPositiveButton("Sí, Borrar Todo") { _, _ -> clearAllShoppingListItems() }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    // ****** MÉTODO MODIFICADO ******
     private fun addItemToShoppingList() {
         val itemName = editTextShoppingItem.text.toString().trim()
         val userId = auth.currentUser?.uid
@@ -170,7 +179,6 @@ class ShoppingListFragment : Fragment() {
             }
         hideKeyboard()
     }
-    // ****** FIN MÉTODO MODIFICADO ******
 
     private fun attachShoppingListListener() {
         val userId = auth.currentUser?.uid ?: return
@@ -192,13 +200,13 @@ class ShoppingListFragment : Fragment() {
                     try {
                         val item = document.toObject<ShoppingListItem>()
                         item.documentId = document.id
-                        Log.d(TAG, "Item Leído de Firestore: Name='${item.name}', RecipeId='${item.recipeId}', RecipeName='${item.recipeName}', DocId='${item.documentId}', Purchased=${item.isPurchased}, AddedAt=${item.addedAt}")
                         rawShoppingListItems.add(item)
                     } catch (ex: Exception) {
                         Log.e(TAG, "Error al parsear ShoppingListItem ID: ${document.id}", ex)
                     }
                 }
-                Log.d(TAG, "Total ítems crudos leídos: ${rawShoppingListItems.size}")
+                Log.d(TAG, "Total ítems crudos leídos de Firestore: ${rawShoppingListItems.size}")
+                this.lastRawShoppingListItems = rawShoppingListItems
                 processAndDisplayShoppingList(rawShoppingListItems)
             }
     }
@@ -211,60 +219,121 @@ class ShoppingListFragment : Fragment() {
             .filter { !it.recipeId.isNullOrBlank() }
             .groupBy { it.recipeId }
 
-        Log.d(TAG, "Ítems Agrupados por Receta: ${itemsFromRecipesGrouped.size} grupos.")
-        itemsFromRecipesGrouped.forEach { (id, list) ->
-            Log.d(TAG, "  Grupo Receta ID: $id, Nombre (del primer ítem): ${list.firstOrNull()?.recipeName}, Ingredientes: ${list.size}")
-        }
-
         val standaloneItems = rawItems.filter { it.recipeId.isNullOrBlank() }
-        Log.d(TAG, "Ítems Sueltos: ${standaloneItems.size}")
 
-        val sortableUnits = mutableListOf<Triple<Boolean, Date, Any>>()
+        val sortableUnits = mutableListOf<Triple<Boolean, Date, ShoppingDisplayItem>>()
 
         itemsFromRecipesGrouped.forEach { (recipeId, ingredientsInRecipe) ->
             if (recipeId != null && ingredientsInRecipe.isNotEmpty()) {
                 val allIngredientsPurchased = ingredientsInRecipe.all { it.isPurchased }
                 val representativeDate = ingredientsInRecipe.minOfOrNull { it.addedAt?.time ?: Long.MAX_VALUE }?.let { Date(it) } ?: Date(Long.MAX_VALUE)
-                sortableUnits.add(Triple(allIngredientsPurchased, representativeDate, ShoppingDisplayItem.RecipeHeader(recipeId, ingredientsInRecipe.first().recipeName ?: "Receta")))
+                val isExpanded = recipeExpandedStates.getOrPut(recipeId) { true } // Default a expandido
+                sortableUnits.add(Triple(allIngredientsPurchased, representativeDate,
+                    ShoppingDisplayItem.RecipeHeader(recipeId, ingredientsInRecipe.first().recipeName ?: "Receta", isExpanded)
+                ))
             }
         }
 
         standaloneItems.forEach { item ->
-            // Corrección para la ordenación de ítems nuevos:
-            val sortDate = item.addedAt ?: Date(Long.MAX_VALUE)
+            val sortDate = item.addedAt ?: Date(Long.MAX_VALUE) // Ítems nuevos (addedAt=null) arriba
             sortableUnits.add(Triple(item.isPurchased, sortDate, ShoppingDisplayItem.StandaloneItem(item, item.documentId!!)))
         }
 
-        sortableUnits.sortWith(compareBy<Triple<Boolean, Date, Any>> { it.first }.thenByDescending { it.second })
+        sortableUnits.sortWith(compareBy<Triple<Boolean, Date, ShoppingDisplayItem>> { it.first }.thenByDescending { it.second })
 
         sortableUnits.forEach { unit ->
-            when (val itemType = unit.third) {
-                is ShoppingDisplayItem.RecipeHeader -> {
-                    displayList.add(itemType)
-                    itemsFromRecipesGrouped[itemType.recipeId]
-                        ?.sortedWith(compareBy({ it.isPurchased }, { it.addedAt ?: Date(Long.MAX_VALUE) }))
-                        ?.forEach { ingredient ->
-                            ingredient.documentId?.let { docId ->
-                                displayList.add(ShoppingDisplayItem.RecipeIngredient(ingredient, docId))
-                            } ?: Log.w(TAG, "Ingrediente de receta '${ingredient.name}' sin documentId")
+            val displayItem = unit.third
+            displayList.add(displayItem) // Añadir Header o StandaloneItem
+
+            if (displayItem is ShoppingDisplayItem.RecipeHeader && displayItem.isExpanded) {
+                itemsFromRecipesGrouped[displayItem.recipeId]
+                    ?.sortedWith(compareBy({ it.isPurchased }, { it.addedAt ?: Date(Long.MAX_VALUE) }))
+                    ?.forEach { ingredient ->
+                        ingredient.documentId?.let { docId ->
+                            displayList.add(ShoppingDisplayItem.RecipeIngredient(ingredient, docId))
                         }
-                }
-                is ShoppingDisplayItem.StandaloneItem -> {
-                    displayList.add(itemType)
-                }
+                    }
             }
         }
 
-        Log.d(TAG, "DisplayList final para el adaptador (${displayList.size} ítems):")
-        displayList.forEachIndexed { index, dItem -> Log.d(TAG, "  Item $index: $dItem") }
+        Log.d(TAG, "DisplayList final para el adaptador (${displayList.size} ítems).")
+        // displayList.forEachIndexed { index, dItem -> Log.d(TAG, " Item $index: $dItem") }
+
 
         if (::shoppingListAdapter.isInitialized) {
-            shoppingListAdapter.submitList(displayList.toList())
+            shoppingListAdapter.submitList(displayList.toList()) // Enviar una nueva lista (inmutable)
         }
         updateEmptyViewAndClearButtonVisibility(displayList)
         Log.d(TAG, "processAndDisplayShoppingList: Lista actualizada en el adaptador.")
     }
 
+
+    private fun toggleRecipeExpandedState(recipeId: String) {
+        val currentState = recipeExpandedStates.getOrPut(recipeId) { true }
+        recipeExpandedStates[recipeId] = !currentState
+        Log.d(TAG, "Toggled recipe $recipeId expanded state to: ${!currentState}")
+        lastRawShoppingListItems?.let {
+            processAndDisplayShoppingList(it)
+        } ?: run {
+            Log.w(TAG, "lastRawShoppingListItems es null al intentar toggleRecipeExpandedState. Re-adjuntando listener.")
+            if (auth.currentUser != null) attachShoppingListListener()
+        }
+    }
+
+    private fun showDeleteRecipeConfirmationDialog(recipeId: String, recipeName: String) {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Eliminar Receta de la Lista")
+            .setMessage("¿Eliminar todos los ingredientes de la receta '$recipeName' de la lista de la compra?")
+            .setIcon(R.drawable.ic_delete) // O el que prefieras
+            .setPositiveButton("Sí, Eliminar") { _, _ ->
+                deleteRecipeIngredientsFromFirestore(recipeId, recipeName)
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun deleteRecipeIngredientsFromFirestore(recipeId: String, recipeName: String) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(requireContext(), "Debes iniciar sesión.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Log.d(TAG, "Intentando eliminar todos los ingredientes de la receta ID: $recipeId ($recipeName)")
+        val shoppingListRef = db.collection("users").document(userId).collection("shoppingListItems")
+
+        shoppingListRef.whereEqualTo("recipeId", recipeId).get()
+            .addOnSuccessListener { querySnapshot ->
+                if (querySnapshot.isEmpty) {
+                    Log.d(TAG, "No se encontraron ingredientes para la receta ID: $recipeId para eliminar.")
+                    // No es necesariamente un error, podría haberse eliminado ya.
+                    // Toast.makeText(requireContext(), "No hay ingredientes para esta receta.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+                val batch = db.batch()
+                querySnapshot.documents.forEach { document ->
+                    batch.delete(document.reference)
+                }
+                batch.commit()
+                    .addOnSuccessListener {
+                        Log.d(TAG, "Todos los ingredientes de la receta '$recipeName' eliminados.")
+                        Toast.makeText(requireContext(), "Ingredientes de '$recipeName' eliminados.", Toast.LENGTH_SHORT).show()
+                        // El SnapshotListener actualizará la UI.
+                        // También eliminar el estado de expansión de la receta si ya no tiene items.
+                        recipeExpandedStates.remove(recipeId)
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e(TAG, "Error al eliminar ingredientes de la receta '$recipeName' en batch:", e)
+                        Toast.makeText(requireContext(), "Error al eliminar receta: ${e.message}", Toast.LENGTH_LONG).show()
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e(TAG, "Error al obtener ingredientes para eliminar receta '$recipeName':", e)
+                Toast.makeText(requireContext(), "Error al buscar ingredientes de receta: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    // --- Métodos existentes sin cambios ---
     private fun updateItemPurchasedStatusInFirestore(documentId: String, isPurchased: Boolean) {
         val userId = auth.currentUser?.uid ?: return
         db.collection("users").document(userId).collection("shoppingListItems").document(documentId)
@@ -303,6 +372,7 @@ class ShoppingListFragment : Fragment() {
                 .addOnSuccessListener {
                     Log.d(TAG, "Todos los ítems borrados de Firestore.")
                     Toast.makeText(requireContext(), "Lista de compra borrada.", Toast.LENGTH_SHORT).show()
+                    recipeExpandedStates.clear() // Limpiar todos los estados de expansión
                 }
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Error al ejecutar batch delete:", e)
@@ -316,7 +386,7 @@ class ShoppingListFragment : Fragment() {
     }
 
     private fun updateEmptyViewAndClearButtonVisibility(displayItems: List<ShoppingDisplayItem>) {
-        if (view == null) return
+        if (view == null) return // Fragment puede estar destruyéndose
         val isEmpty = displayItems.isEmpty()
         textViewShoppingListEmpty.isVisible = isEmpty
         recyclerViewShoppingListItems.isVisible = !isEmpty
