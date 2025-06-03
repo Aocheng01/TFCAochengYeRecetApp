@@ -37,6 +37,7 @@
         android:layout_height="0dp"
         android:layout_marginEnd="16dp"
         android:text="Buscar"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintBottom_toBottomOf="@+id/textInputLayoutSearchQuery"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@+id/textInputLayoutSearchQuery" />
@@ -132,6 +133,7 @@
         android:layout_marginBottom="16dp"
         android:text="Cargar Más"
         android:visibility="gone"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

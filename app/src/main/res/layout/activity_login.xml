@@ -59,6 +59,7 @@
         android:layout_height="wrap_content"
         android:text="Iniciar Sesión con Email"
         android:layout_marginTop="24dp"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintTop_toBottomOf="@+id/textInputLayoutPassword"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -71,6 +72,7 @@
         android:textColor="?attr/colorPrimary"
         android:layout_marginTop="16dp"
         android:padding="8dp"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintTop_toBottomOf="@+id/buttonLoginEmail"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -82,6 +84,7 @@
         android:layout_height="wrap_content"
         android:text="Registrarse con Email"
         android:layout_marginTop="16dp"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintTop_toBottomOf="@+id/textViewForgotPassword"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
@@ -102,6 +105,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintTop_toBottomOf="@+id/textViewOr"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>

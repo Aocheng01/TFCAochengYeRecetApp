@@ -1,8 +1,8 @@
 package com.example.recetapp
 
-import android.content.Context // Importar Context
+import android.content.Context
 import android.content.Intent
-import android.content.SharedPreferences // Importar SharedPreferences
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -10,11 +10,14 @@ import android.widget.ImageButton
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatDelegate // Importar AppCompatDelegate
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.Toolbar
 import androidx.viewpager2.widget.ViewPager2
 import com.example.recetapp.adapters.ViewPagerAdapter
 import com.example.recetapp.fragments.PantryFragmentListener
+// ----- NUEVA IMPORTACIÓN -----
+import com.example.recetapp.utils.ZoomOutPageTransformer // Asegúrate que la ruta sea correcta
+// ---------------------------
 import com.example.recetapp.viewmodels.SearchViewModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
@@ -34,21 +37,17 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
     private val searchViewModel: SearchViewModel by viewModels()
 
-    // --- NUEVO: Para SharedPreferences de Tema ---
     private lateinit var themePrefs: SharedPreferences
     private val PREFS_NAME = "theme_prefs"
     private val PREF_KEY_THEME = "selected_theme"
-    // -------------------------------------------
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // --- NUEVO: Cargar y aplicar tema guardado ---
         themePrefs = getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         applySavedTheme()
-        // ------------------------------------------
 
-        setContentView(R.layout.activity_main) // Tu layout con Toolbar, TabLayout, ViewPager2
+        setContentView(R.layout.activity_main)
 
         auth = Firebase.auth
 
@@ -59,10 +58,15 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
         tabLayout = findViewById(R.id.tabLayout)
         imageButtonUserProfile = findViewById(R.id.imageButtonUserProfile)
 
-        val adapter = ViewPagerAdapter(this) //
+        val adapter = ViewPagerAdapter(this)
         viewPager.adapter = adapter
+        // ----- APLICAR PAGE TRANSFORMER -----
+        viewPager.setPageTransformer(ZoomOutPageTransformer())
+        // ------------------------------------
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
+            // Asegúrate que este orden coincida con tu ViewPagerAdapter MÁS RECIENTE
+            // Si el orden es: Despensa(0), Buscar(1), Lista Compra(2), Favoritos(3)
             tab.text = when (position) {
                 0 -> "Despensa"
                 1 -> "Buscar"
@@ -76,7 +80,9 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             Log.w(TAG, "Usuario no logueado en MainActivity, volviendo a Login.")
             navigateToLogin()
         } else {
-            viewPager.setCurrentItem(1, false) // Pestaña de búsqueda (índice 1) como inicial
+            // Ajusta esto al índice de tu pestaña "Buscar" según ViewPagerAdapter
+            // Si Buscar es la posición 1:
+            viewPager.setCurrentItem(1, false)
         }
 
         imageButtonUserProfile.setOnClickListener {
@@ -91,12 +97,10 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
         finish()
     }
 
-    // ----- MODIFICADO: showUserProfileOptions con nuevas opciones -----
     private fun showUserProfileOptions() {
         val user = auth.currentUser
         val displayName = user?.displayName ?: user?.email ?: "Usuario"
 
-        // Nuevas opciones añadidas
         val options = arrayOf(
             "Perfil de $displayName",
             "Cambiar Contraseña",
@@ -106,17 +110,18 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         AlertDialog.Builder(this)
             .setTitle("Opciones de Usuario")
-            .setItems(options) { dialog, which ->
+            .setItems(options) { _, which ->
                 when (which) {
-                    0 -> { // Ver Perfil
+                    0 -> {
+                        Toast.makeText(this, "Funcionalidad de perfil próximamente.", Toast.LENGTH_SHORT).show()
                     }
-                    1 -> { // Cambiar Contraseña
+                    1 -> {
                         handleChangePassword()
                     }
-                    2 -> { // Cambiar Modo
+                    2 -> {
                         toggleTheme()
                     }
-                    3 -> { // Cerrar Sesión
+                    3 -> {
                         auth.signOut()
                         Toast.makeText(this, "Sesión cerrada.", Toast.LENGTH_SHORT).show()
                         navigateToLogin()
@@ -126,9 +131,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             .setNegativeButton("Cancelar", null)
             .show()
     }
-    // -------------------------------------------------------------------
 
-    // ----- NUEVO: Lógica para cambiar contraseña -----
     private fun handleChangePassword() {
         val user = auth.currentUser
         if (user?.email != null) {
@@ -145,42 +148,33 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             Toast.makeText(this, "No se pudo obtener el email del usuario.", Toast.LENGTH_SHORT).show()
         }
     }
-    // ----------------------------------------------
 
-    // ----- NUEVO: Lógica para cambiar y guardar el tema -----
     private fun applySavedTheme() {
         val savedTheme = themePrefs.getInt(PREF_KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        AppCompatDelegate.setDefaultNightMode(savedTheme)
+        if (AppCompatDelegate.getDefaultNightMode() != savedTheme) {
+            AppCompatDelegate.setDefaultNightMode(savedTheme)
+        }
     }
 
     private fun toggleTheme() {
         val currentNightMode = AppCompatDelegate.getDefaultNightMode()
-        var newNightMode: Int
-
-        // Alternar entre modo claro y oscuro. Se podría añadir opción de sistema.
-        if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES) {
-            newNightMode = AppCompatDelegate.MODE_NIGHT_NO
-            Toast.makeText(this, "Cambiando a Modo Claro", Toast.LENGTH_SHORT).show()
+        val newNightMode = if (currentNightMode == AppCompatDelegate.MODE_NIGHT_YES ||
+            (currentNightMode == AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM &&
+                    (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES)) {
+            AppCompatDelegate.MODE_NIGHT_NO
         } else {
-            newNightMode = AppCompatDelegate.MODE_NIGHT_YES
-            Toast.makeText(this, "Cambiando a Modo Oscuro", Toast.LENGTH_SHORT).show()
+            AppCompatDelegate.MODE_NIGHT_YES
         }
 
         AppCompatDelegate.setDefaultNightMode(newNightMode)
         themePrefs.edit().putInt(PREF_KEY_THEME, newNightMode).apply()
-
-        // Opcional: recrear la actividad para que los cambios de tema se apliquen inmediatamente
-        // recreate()
-        // Si no usas recreate(), algunos cambios pueden requerir reiniciar la app o navegar
-        // entre actividades para verse completamente. AppCompatDelegate intenta manejarlo,
-        // pero recreate() es más directo.
+        // recreate() // Descomenta si quieres que el cambio de tema sea inmediato en MainActivity
     }
-    // -------------------------------------------------------
-
 
     override fun onSearchRequestedFromPantry(query: String) {
         Log.d(TAG, "MainActivity: Búsqueda solicitada desde despensa con query: $query")
         searchViewModel.setSearchQuery(query)
-        viewPager.setCurrentItem(1, true) // Navega a la pestaña "Buscar" (índice 1)
+        // Asegúrate que el índice (1) corresponde a SearchRecipesFragment según tu ViewPagerAdapter
+        viewPager.setCurrentItem(1, true)
     }
 }

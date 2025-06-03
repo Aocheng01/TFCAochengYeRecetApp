@@ -242,14 +242,25 @@ class RecipeDetailActivity : AppCompatActivity() {
             textViewLabelsTitle.visibility = View.VISIBLE
             chipGroupLabels.visibility = View.VISIBLE
             allLabels.distinct().forEach { labelString ->
+                // 1. Crea el Chip aplicando el estilo deseado
                 val chip = Chip(ContextThemeWrapper(this, com.google.android.material.R.style.Widget_Material3_Chip_Assist))
+
                 val translatedLabel = dietHealthLabelTranslations[labelString.lowercase(Locale.ROOT)] ?: labelString
                 chip.text = translatedLabel
+
+                // 2. Establece el color de fondo específico
                 chip.chipBackgroundColor = ColorStateList.valueOf(Color.parseColor("#e9c46a"))
-                val textColorAttr = com.google.android.material.R.attr.colorOnSecondaryContainer
-                val typedValue = TypedValue()
-                theme.resolveAttribute(textColorAttr, typedValue, true)
-                chip.setTextColor(typedValue.data)
+
+                // ----- MODIFICACIÓN AQUÍ -----
+                // Establecer un color de texto que contraste bien con #e9c46a, independientemente del tema
+                // Puedes usar un color definido en tus colors.xml o un color directo.
+                // Por ejemplo, un negro o un gris oscuro.
+                // Si tienes un color definido en colors.xml, por ejemplo: <color name="chip_text_color_on_custom_bg">#DE000000</color> (negro con 87% opacidad)
+                // chip.setTextColor(ContextCompat.getColor(this, R.color.chip_text_color_on_custom_bg))
+                // O directamente:
+                chip.setTextColor(Color.BLACK) // O un gris oscuro como Color.parseColor("#D9000000")
+                // -----------------------------
+
                 chipGroupLabels.addView(chip)
             }
         } else {

@@ -36,6 +36,7 @@
         android:layout_height="0dp"
         android:layout_marginEnd="16dp"
         android:text="Añadir"
+        android:stateListAnimator="@animator/button_press_scale"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="@id/textInputLayoutShoppingItem"
         app:layout_constraintBottom_toBottomOf="@id/textInputLayoutShoppingItem"/>
@@ -78,6 +79,7 @@
         style="?attr/materialButtonOutlinedStyle"
         app:strokeColor="?attr/colorError"
         android:textColor="?attr/colorError"
+        android:stateListAnimator="@animator/button_press_scale"
         app:iconTint="?attr/colorError"
         android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"

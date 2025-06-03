@@ -29,6 +29,7 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:contentDescription="Perfil de usuario"
+            android:stateListAnimator="@animator/button_press_scale"
             app:srcCompat="@drawable/user"
             app:tint="?attr/colorOnSurface" />
     </com.google.android.material.appbar.MaterialToolbar>

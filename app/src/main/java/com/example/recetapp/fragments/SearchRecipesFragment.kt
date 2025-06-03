@@ -239,6 +239,7 @@ class SearchRecipesFragment : Fragment() {
         val intent = Intent(activity, RecipeDetailActivity::class.java)
         intent.putExtra(RecipeDetailActivity.EXTRA_RECIPE, recipe)
         startActivity(intent)
+        activity?.overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
     }
 
     private fun hideKeyboard() {
