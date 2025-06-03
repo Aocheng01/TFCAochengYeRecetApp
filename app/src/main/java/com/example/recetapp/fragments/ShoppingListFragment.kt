@@ -18,7 +18,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.R
-import com.example.recetapp.adapters.ShoppingListAdapter
+import com.example.recetapp.adapters.ShoppingListAdapter // Asumo que tienes este adaptador
 import com.example.recetapp.data.ShoppingDisplayItem
 import com.example.recetapp.data.ShoppingListItem
 import com.google.android.material.textfield.TextInputEditText
@@ -35,7 +35,7 @@ import java.util.Date
 
 class ShoppingListFragment : Fragment() {
 
-    private val TAG = "ShoppingListFragment" // TAG para logs
+    private val TAG = "ShoppingListFragment"
 
     private lateinit var editTextShoppingItem: TextInputEditText
     private lateinit var buttonAddShoppingItem: Button
@@ -75,7 +75,9 @@ class ShoppingListFragment : Fragment() {
             attachShoppingListListener()
         } else {
             Log.w(TAG, "onStart: Usuario no logueado. Limpiando lista.")
-            shoppingListAdapter.submitList(emptyList())
+            if (::shoppingListAdapter.isInitialized) {
+                shoppingListAdapter.submitList(emptyList())
+            }
             updateEmptyViewAndClearButtonVisibility(emptyList())
         }
     }
@@ -127,12 +129,13 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Borrar Toda la Lista")
             .setMessage("¿Estás seguro de que quieres eliminar TODOS los ítems? Esta acción no se puede deshacer.")
-            .setIcon(R.drawable.ic_delete) // Asegúrate de tener este drawable
+            .setIcon(R.drawable.ic_delete)
             .setPositiveButton("Sí, Borrar Todo") { _, _ -> clearAllShoppingListItems() }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
+    // ****** MÉTODO MODIFICADO ******
     private fun addItemToShoppingList() {
         val itemName = editTextShoppingItem.text.toString().trim()
         val userId = auth.currentUser?.uid
@@ -146,17 +149,18 @@ class ShoppingListFragment : Fragment() {
             return
         }
 
-        val shoppingItem = ShoppingListItem(
-            name = itemName,
-            isPurchased = false,
-            recipeId = null,
-            recipeName = null,
-            addedAt = null // Firestore lo establecerá con @ServerTimestamp
+        val shoppingItemData = hashMapOf(
+            "name" to itemName,
+            "isPurchased" to false,
+            "recipeId" to null,
+            "recipeName" to null,
+            "addedAt" to FieldValue.serverTimestamp()
         )
 
-        db.collection("users").document(userId).collection("shoppingListItems").add(shoppingItem)
-            .addOnSuccessListener {
-                Log.d(TAG, "Ítem manual '$itemName' añadido a Firestore.")
+        db.collection("users").document(userId).collection("shoppingListItems")
+            .add(shoppingItemData)
+            .addOnSuccessListener { documentReference ->
+                Log.d(TAG, "Ítem manual '$itemName' añadido a Firestore con ID: ${documentReference.id}.")
                 Toast.makeText(requireContext(), "$itemName añadido.", Toast.LENGTH_SHORT).show()
                 editTextShoppingItem.text?.clear()
             }
@@ -166,15 +170,16 @@ class ShoppingListFragment : Fragment() {
             }
         hideKeyboard()
     }
+    // ****** FIN MÉTODO MODIFICADO ******
 
     private fun attachShoppingListListener() {
         val userId = auth.currentUser?.uid ?: return
-        shoppingListListenerRegistration?.remove() // Quitar listener anterior si existe
+        shoppingListListenerRegistration?.remove()
 
         Log.d(TAG, "attachShoppingListListener: Adjuntando SnapshotListener para usuario $userId")
         db.collection("users").document(userId).collection("shoppingListItems")
             .orderBy("isPurchased", Query.Direction.ASCENDING)
-            .orderBy("addedAt", Query.Direction.DESCENDING) // Orden general por fecha para la consulta inicial
+            .orderBy("addedAt", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
                     Log.w(TAG, "Error en SnapshotListener: ", e)
@@ -187,14 +192,12 @@ class ShoppingListFragment : Fragment() {
                     try {
                         val item = document.toObject<ShoppingListItem>()
                         item.documentId = document.id
-                        // ----> LOG QUE TE PEDÍ <----d
                         Log.d(TAG, "Item Leído de Firestore: Name='${item.name}', RecipeId='${item.recipeId}', RecipeName='${item.recipeName}', DocId='${item.documentId}', Purchased=${item.isPurchased}, AddedAt=${item.addedAt}")
                         rawShoppingListItems.add(item)
                     } catch (ex: Exception) {
                         Log.e(TAG, "Error al parsear ShoppingListItem ID: ${document.id}", ex)
                     }
                 }
-                // ----> LOG QUE TE PEDÍ <----
                 Log.d(TAG, "Total ítems crudos leídos: ${rawShoppingListItems.size}")
                 processAndDisplayShoppingList(rawShoppingListItems)
             }
@@ -208,43 +211,38 @@ class ShoppingListFragment : Fragment() {
             .filter { !it.recipeId.isNullOrBlank() }
             .groupBy { it.recipeId }
 
-        // ----> LOG QUE TE PEDÍ <----
         Log.d(TAG, "Ítems Agrupados por Receta: ${itemsFromRecipesGrouped.size} grupos.")
         itemsFromRecipesGrouped.forEach { (id, list) ->
             Log.d(TAG, "  Grupo Receta ID: $id, Nombre (del primer ítem): ${list.firstOrNull()?.recipeName}, Ingredientes: ${list.size}")
         }
 
         val standaloneItems = rawItems.filter { it.recipeId.isNullOrBlank() }
-        // ----> LOG QUE TE PEDÍ <----
         Log.d(TAG, "Ítems Sueltos: ${standaloneItems.size}")
 
-        // Estructura para ordenar: (esCompradoElBloque, fechaRepresentativaDelBloque, tipoDeBloque{0=receta, 1=item}, objetoDelBloque)
         val sortableUnits = mutableListOf<Triple<Boolean, Date, Any>>()
 
         itemsFromRecipesGrouped.forEach { (recipeId, ingredientsInRecipe) ->
             if (recipeId != null && ingredientsInRecipe.isNotEmpty()) {
                 val allIngredientsPurchased = ingredientsInRecipe.all { it.isPurchased }
-                // Usar la fecha del ingrediente más antiguo de la receta para mantener el grupo unido por su "fecha de creación"
-                val representativeDate = ingredientsInRecipe.minOfOrNull { it.addedAt?.time ?: Long.MAX_VALUE }?.let { Date(it) } ?: Date(0)
+                val representativeDate = ingredientsInRecipe.minOfOrNull { it.addedAt?.time ?: Long.MAX_VALUE }?.let { Date(it) } ?: Date(Long.MAX_VALUE)
                 sortableUnits.add(Triple(allIngredientsPurchased, representativeDate, ShoppingDisplayItem.RecipeHeader(recipeId, ingredientsInRecipe.first().recipeName ?: "Receta")))
             }
         }
 
         standaloneItems.forEach { item ->
-            sortableUnits.add(Triple(item.isPurchased, item.addedAt ?: Date(0), ShoppingDisplayItem.StandaloneItem(item, item.documentId!!)))
+            // Corrección para la ordenación de ítems nuevos:
+            val sortDate = item.addedAt ?: Date(Long.MAX_VALUE)
+            sortableUnits.add(Triple(item.isPurchased, sortDate, ShoppingDisplayItem.StandaloneItem(item, item.documentId!!)))
         }
 
-        // Ordenar: No comprados primero, luego los más recientes primero
         sortableUnits.sortWith(compareBy<Triple<Boolean, Date, Any>> { it.first }.thenByDescending { it.second })
 
-        // Construir la lista final para el adaptador
         sortableUnits.forEach { unit ->
             when (val itemType = unit.third) {
                 is ShoppingDisplayItem.RecipeHeader -> {
-                    displayList.add(itemType) // Añadir cabecera
-                    // Buscar los ingredientes para esta cabecera y añadirlos ordenados
+                    displayList.add(itemType)
                     itemsFromRecipesGrouped[itemType.recipeId]
-                        ?.sortedWith(compareBy({ it.isPurchased }, { it.addedAt })) // Ordenar ingredientes dentro de la receta
+                        ?.sortedWith(compareBy({ it.isPurchased }, { it.addedAt ?: Date(Long.MAX_VALUE) }))
                         ?.forEach { ingredient ->
                             ingredient.documentId?.let { docId ->
                                 displayList.add(ShoppingDisplayItem.RecipeIngredient(ingredient, docId))
@@ -252,20 +250,20 @@ class ShoppingListFragment : Fragment() {
                         }
                 }
                 is ShoppingDisplayItem.StandaloneItem -> {
-                    displayList.add(itemType) // Añadir ítem suelto
+                    displayList.add(itemType)
                 }
             }
         }
 
-        // ----> LOG QUE TE PEDÍ <----
         Log.d(TAG, "DisplayList final para el adaptador (${displayList.size} ítems):")
         displayList.forEachIndexed { index, dItem -> Log.d(TAG, "  Item $index: $dItem") }
 
-        shoppingListAdapter.submitList(displayList.toList())
+        if (::shoppingListAdapter.isInitialized) {
+            shoppingListAdapter.submitList(displayList.toList())
+        }
         updateEmptyViewAndClearButtonVisibility(displayList)
         Log.d(TAG, "processAndDisplayShoppingList: Lista actualizada en el adaptador.")
     }
-
 
     private fun updateItemPurchasedStatusInFirestore(documentId: String, isPurchased: Boolean) {
         val userId = auth.currentUser?.uid ?: return
@@ -318,6 +316,7 @@ class ShoppingListFragment : Fragment() {
     }
 
     private fun updateEmptyViewAndClearButtonVisibility(displayItems: List<ShoppingDisplayItem>) {
+        if (view == null) return
         val isEmpty = displayItems.isEmpty()
         textViewShoppingListEmpty.isVisible = isEmpty
         recyclerViewShoppingListItems.isVisible = !isEmpty
