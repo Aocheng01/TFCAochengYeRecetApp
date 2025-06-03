@@ -1,19 +1,20 @@
-// En tu archivo Ingredient.kt
-package com.example.recetapp.data // O tu paquete
+package com.example.recetapp.data
 
 import android.os.Parcelable
+import com.google.firebase.firestore.IgnoreExtraProperties // Asegúrate de importar esto
 import kotlinx.parcelize.Parcelize
-// ... otras importaciones si las tiene ...
 
+@IgnoreExtraProperties // <-- AÑADIDO
 @Parcelize
 data class Ingredient(
-    // ... los campos de tu clase Ingredient ...
-    val text: String?,
-    val quantity: Double?,
-    val measure: String?,
-    val food: String?,
-    val weight: Double?,
-    val foodCategory: String?,
-    val foodId: String?,
-    val image: String?
+    val text: String? = null,
+    val quantity: Double? = null,
+    val measure: String? = null,
+    val food: String? = null,
+    val weight: Double? = null,
+    val foodCategory: String? = null,
+    val foodId: String? = null,
+    val image: String? = null
+    // Si 'stability' es un campo que quieres usar en Ingredient:
+    // val stability: String? = null,
 ) : Parcelable

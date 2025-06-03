@@ -28,8 +28,10 @@ import com.google.firebase.auth.ktx.auth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
 import com.google.firebase.ktx.Firebase
 import java.util.Locale
+import java.util.Date
 
 // --- IMPORTACIONES DE ML KIT TRANSLATE ---
 import com.google.mlkit.common.model.DownloadConditions
@@ -136,6 +138,8 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         if (currentRecipe != null) {
+            // Comprueba si la receta ya está en favoritos en Firestore
+            checkIfFavorite(currentRecipe!!)
             populateUI(currentRecipe!!)
         } else {
             handleRecipeError()
@@ -238,26 +242,14 @@ class RecipeDetailActivity : AppCompatActivity() {
             textViewLabelsTitle.visibility = View.VISIBLE
             chipGroupLabels.visibility = View.VISIBLE
             allLabels.distinct().forEach { labelString ->
-                // 1. Crea el Chip aplicando el estilo deseado
                 val chip = Chip(ContextThemeWrapper(this, com.google.android.material.R.style.Widget_Material3_Chip_Assist))
-
                 val translatedLabel = dietHealthLabelTranslations[labelString.lowercase(Locale.ROOT)] ?: labelString
                 chip.text = translatedLabel
-
-                // 2. Establece el color de fondo específico
                 chip.chipBackgroundColor = ColorStateList.valueOf(Color.parseColor("#e9c46a"))
-
-                // 3. (Opcional pero recomendado) Establece el color del texto como en el XML
-                //    Si el estilo Widget.Material3.Chip.Assist ya define un color de texto adecuado,
-                //    esto podría no ser estrictamente necesario, pero para replicar tu XML:
-                val textColorAttr = com.google.android.material.R.attr.colorOnSecondaryContainer // Usa el atributo correcto de Material 3
+                val textColorAttr = com.google.android.material.R.attr.colorOnSecondaryContainer
                 val typedValue = TypedValue()
                 theme.resolveAttribute(textColorAttr, typedValue, true)
                 chip.setTextColor(typedValue.data)
-                // Alternativamente, si el estilo ya lo maneja bien:
-                // chip.setTextColor(ContextCompat.getColor(this, R.color.tu_color_de_texto_para_chip))
-
-
                 chipGroupLabels.addView(chip)
             }
         } else {
@@ -293,14 +285,16 @@ class RecipeDetailActivity : AppCompatActivity() {
         } else { textViewRecipeUrlDetail.visibility = View.GONE }
         textViewSourceUrlTitle.visibility = if(sourceOrUrlExists) View.VISIBLE else View.GONE
 
-        updateFavoriteIcon(recipe.isFavorite)
         fabFavorite.setOnClickListener {
-            recipe.isFavorite = !recipe.isFavorite
-            updateFavoriteIcon(recipe.isFavorite)
-            // TODO: Implementar guardado en Firestore para favoritos
-            val action = if (recipe.isFavorite) "añadida a" else "eliminada de"
-            Toast.makeText(this, "Receta $action favoritos. (Implementar Firestore)", Toast.LENGTH_SHORT).show()
+            currentRecipe?.let {
+                if (it.isFavorite) {
+                    removeRecipeFromFavorites(it)
+                } else {
+                    saveRecipeToFavorites(it)
+                }
+            }
         }
+
         fabAddToList.setOnClickListener {
             currentRecipe?.let {
                 addIngredientsToShoppingList(it)
@@ -429,8 +423,12 @@ class RecipeDetailActivity : AppCompatActivity() {
         if(::fabFavorite.isInitialized) {
             if (isFav) {
                 fabFavorite.setImageResource(R.drawable.ic_favorite)
+                fabFavorite.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FFC107")) // Amarillo
             } else {
                 fabFavorite.setImageResource(R.drawable.ic_favorite_border)
+                val typedValue = TypedValue()
+                theme.resolveAttribute(com.google.android.material.R.attr.colorSecondaryContainer, typedValue, true)
+                fabFavorite.backgroundTintList = ColorStateList.valueOf(typedValue.data)
             }
         }
     }
@@ -502,14 +500,13 @@ class RecipeDetailActivity : AppCompatActivity() {
         Log.d(TAG, "commitIngredientsToFirestoreBatch: Añadiendo los siguientes items al batch: ${itemsToAdd.joinToString { "'$it'" }}")
 
         itemsToAdd.forEach { ingredientName ->
-            // Asegurarse de no añadir strings vacíos si alguno se coló, aunque filter {it.isNotBlank()} debería prevenirlo.
             if (ingredientName.isNotBlank()) {
                 itemsAttemptedInBatch++
                 val shoppingItemData = hashMapOf(
-                    "name" to ingredientName, // Este es el nombre traducido o el original
+                    "name" to ingredientName,
                     "isPurchased" to false,
-                    "recipeId" to recipe.uri, // Usar el URI original de la receta
-                    "recipeName" to recipe.label, // Usar el nombre original de la receta
+                    "recipeId" to recipe.uri,
+                    "recipeName" to recipe.label,
                     "addedAt" to FieldValue.serverTimestamp()
                 )
                 val newDocRef = shoppingListCollection.document()
@@ -530,6 +527,98 @@ class RecipeDetailActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Log.w(TAG, "Error al añadir ingredientes de '${recipe.label}' a la lista con batch.", e)
                 Toast.makeText(this, "Error al añadir ingredientes a la lista: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+    }
+
+    /**
+     * Crea un ID válido para Firestore a partir de la URI de la receta.
+     */
+    private fun getRecipeId(recipe: Recipe): String {
+        return recipe.uri?.substringAfterLast('#')
+            ?: recipe.label!!.replace(Regex("[/\\\\#\\[\\]*?.]"), "_")
+    }
+
+    /**
+     * Comprueba en Firestore si la receta actual es favorita y actualiza la UI.
+     */
+    private fun checkIfFavorite(recipe: Recipe) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            recipe.isFavorite = false
+            updateFavoriteIcon(false)
+            return
+        }
+        val recipeId = getRecipeId(recipe)
+
+        db.collection("users").document(userId)
+            .collection("favoriteRecipes").document(recipeId)
+            .get()
+            .addOnSuccessListener { document ->
+                val isFav = document.exists()
+                recipe.isFavorite = isFav
+                updateFavoriteIcon(isFav)
+            }
+            .addOnFailureListener {
+                Log.w(TAG, "Error al comprobar favorito, asumiendo que no lo es.", it)
+                recipe.isFavorite = false
+                updateFavoriteIcon(false)
+            }
+    }
+
+    /**
+     * Guarda la receta completa en la subcolección 'favoriteRecipes' del usuario.
+     */
+    private fun saveRecipeToFavorites(recipe: Recipe) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(this, "Debes iniciar sesión para guardar favoritos", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val recipeId = getRecipeId(recipe)
+
+        recipe.isFavorite = true
+
+        db.collection("users").document(userId)
+            .collection("favoriteRecipes").document(recipeId)
+            .set(recipe)
+            .addOnSuccessListener {
+                Log.d(TAG, "Receta añadida a favoritos en Firestore.")
+                updateFavoriteIcon(true)
+                Toast.makeText(this, "Guardada en favoritos", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error al guardar receta en favoritos", e)
+                Toast.makeText(this, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
+                recipe.isFavorite = false
+                updateFavoriteIcon(false)
+            }
+    }
+
+    /**
+     * Elimina la receta de la subcolección 'favoriteRecipes' del usuario.
+     */
+    private fun removeRecipeFromFavorites(recipe: Recipe) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Toast.makeText(this, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val recipeId = getRecipeId(recipe)
+
+        db.collection("users").document(userId)
+            .collection("favoriteRecipes").document(recipeId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d(TAG, "Receta eliminada de favoritos en Firestore.")
+                recipe.isFavorite = false
+                updateFavoriteIcon(false)
+                Toast.makeText(this, "Eliminada de favoritos", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Log.w(TAG, "Error al eliminar receta de favoritos", e)
+                Toast.makeText(this, "Error al eliminar: ${e.message}", Toast.LENGTH_SHORT).show()
+                recipe.isFavorite = true
+                updateFavoriteIcon(true)
             }
     }
 

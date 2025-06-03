@@ -2,40 +2,35 @@ package com.example.recetapp.data
 
 import com.google.gson.annotations.SerializedName
 import android.os.Parcelable
+import com.google.firebase.firestore.IgnoreExtraProperties // Asegúrate de importar esto
 import kotlinx.parcelize.Parcelize
 
-
+@IgnoreExtraProperties // <-- AÑADIDO
 @Parcelize
-// Representa la información detallada de una receta
 data class Recipe(
-    @SerializedName("yield") val servings: Float?, // <-- ASEGÚRATE QUE ESTE CAMPO EXISTE Y SE LLAMA 'servings'
-    val uri: String?, // Identificador único de la receta
-    val label: String?, // Nombre de la receta (ej. "Chicken Soup")
-    val image: String?, // URL de la imagen principal
-    val images: ImageInfo?, // Objeto con diferentes tamaños de imagen
-    val source: String?, // Fuente de la receta (ej. "Food Network")
-    val url: String?, // URL de la receta original
-    // val shareAs: String?,
-    //val yield: Float?, // Porciones
-    val dietLabels: List<String>?, // Etiquetas de dieta (ej. ["Low-Carb"])
-    val healthLabels: List<String>?, // Etiquetas de salud (ej. ["Peanut-Free", "Tree-Nut-Free"])
-    // val cautions: List<String>?,
-    val ingredientLines: List<String>?, // Lista de ingredientes como texto (ej. "1 cup flour")
-    val ingredients: List<Ingredient>?, // Lista detallada de ingredientes
-    val calories: Double?,
-    val totalWeight: Double?,
-     val totalTime: Double?, // Tiempo total de preparación/cocción
-    // val cuisineType: List<String>?,
-    // val mealType: List<String>?,
-    // val dishType: List<String>?,
-    val totalNutrients: Map<String, NutrientDetail>?,
-    //val totalNutrients: NutrientsInfo?, // Información nutricional detallada
-    // val totalDaily: NutrientsInfo? // Porcentaje diario de nutrientes
-    // val digest: List<DigestInfo>? // Información de digestión por nutriente
-    val difficulty: String? = null, // Para la dificultad (ej. "Fácil", "Medio")
-    val description: String? = null, // Para la descripción de la receta
-    val instructions: List<String>? = null, // Para la lista de pasos de instrucciones
-// Para información nutricional detallada, necesitarás una estructura, por ejemplo:
-    val totalNutrientsDetailed: Map<String, NutrientDetail>? = null, // Usando la clase NutrientDetail que discutimos
-    var isFavorite: Boolean = false // Para el estado de favorito (no parcelar si se determina en runtime)
+    @SerializedName("yield") val servings: Float? = null,
+    val uri: String? = null,
+    val label: String? = null,
+    val image: String? = null,
+    val images: ImageInfo? = null,
+    val source: String? = null,
+    val url: String? = null,
+    val dietLabels: List<String>? = null,
+    val healthLabels: List<String>? = null,
+    val ingredientLines: List<String>? = null,
+    val ingredients: List<Ingredient>? = null,
+    val calories: Double? = null,
+    val totalWeight: Double? = null,
+    val totalTime: Double? = null,
+    val totalNutrients: Map<String, NutrientDetail>? = null,
+    val difficulty: String? = null,
+    val description: String? = null,
+    val instructions: List<String>? = null,
+    val totalNutrientsDetailed: Map<String, NutrientDetail>? = null,
+    var isFavorite: Boolean = false
+    // Si el campo 'addedToFavoritesAt' es importante y quieres usarlo,
+    // deberías añadirlo aquí, por ejemplo:
+    // val addedToFavoritesAt: com.google.firebase.Timestamp? = null,
+    // Y si 'stability' es un campo que quieres usar:
+    // val stability: String? = null, // o el tipo de dato que sea
 ) : Parcelable
