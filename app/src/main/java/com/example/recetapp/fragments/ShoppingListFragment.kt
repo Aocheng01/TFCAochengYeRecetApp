@@ -1,4 +1,3 @@
-// --- File: com/example/recetapp/fragments/ShoppingListFragment.kt ---
 package com.example.recetapp.fragments
 
 import android.content.Context
@@ -102,10 +101,8 @@ class ShoppingListFragment : Fragment() {
                 showDeleteConfirmationDialog(shoppingListItem, documentId)
             },
             onRecipeHeaderClick = { recipeId, recipeName ->
-                // El click en el cuerpo del header también expande/colapsa
                 toggleRecipeExpandedState(recipeId)
             },
-            // Nuevos Callbacks
             onToggleRecipeExpandClick = { recipeId ->
                 toggleRecipeExpandedState(recipeId)
             },
@@ -129,7 +126,7 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Confirmar Eliminación")
             .setMessage("¿Eliminar '${item.name}' de la lista?")
-            .setIcon(R.drawable.ic_delete) // Asegúrate que ic_delete exista
+            .setIcon(R.drawable.ic_delete)
             .setPositiveButton("Eliminar") { _, _ -> deleteShoppingItemFromFirestore(documentId) }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -139,7 +136,7 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Borrar Toda la Lista")
             .setMessage("¿Estás seguro de que quieres eliminar TODOS los ítems? Esta acción no se puede deshacer.")
-            .setIcon(R.drawable.ic_delete) // Puedes usar ic_delete_sweep o ic_delete
+            .setIcon(R.drawable.ic_delete)
             .setPositiveButton("Sí, Borrar Todo") { _, _ -> clearAllShoppingListItems() }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -186,8 +183,8 @@ class ShoppingListFragment : Fragment() {
 
         Log.d(TAG, "attachShoppingListListener: Adjuntando SnapshotListener para usuario $userId")
         db.collection("users").document(userId).collection("shoppingListItems")
-            .orderBy("isPurchased", Query.Direction.ASCENDING)
-            .orderBy("addedAt", Query.Direction.DESCENDING)
+            .orderBy("isPurchased", Query.Direction.ASCENDING) // No comprados primero
+            .orderBy("addedAt", Query.Direction.DESCENDING)    // Luego, los más recientes primero
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
                     Log.w(TAG, "Error en SnapshotListener: ", e)
@@ -215,40 +212,55 @@ class ShoppingListFragment : Fragment() {
         Log.d(TAG, "processAndDisplayShoppingList: Procesando ${rawItems.size} ítems crudos.")
         val displayList = mutableListOf<ShoppingDisplayItem>()
 
+        // 1. Separar ítems de recetas e ítems individuales
+        // rawItems ya vienen de Firestore ordenados por isPurchased ASC, addedAt DESC
         val itemsFromRecipesGrouped = rawItems
             .filter { !it.recipeId.isNullOrBlank() }
             .groupBy { it.recipeId }
 
-        val standaloneItems = rawItems.filter { it.recipeId.isNullOrBlank() }
+        // standaloneRawItems mantendrán el orden de Firestore
+        val standaloneRawItems = rawItems.filter { it.recipeId.isNullOrBlank() }
 
-        val sortableUnits = mutableListOf<Triple<Boolean, Date, ShoppingDisplayItem>>()
-
+        // 2. Procesar y preparar las recetas para ordenación
+        val recipeDisplayUnits = mutableListOf<Pair<ShoppingDisplayItem.RecipeHeader, List<ShoppingListItem>>>()
         itemsFromRecipesGrouped.forEach { (recipeId, ingredientsInRecipe) ->
             if (recipeId != null && ingredientsInRecipe.isNotEmpty()) {
-                val allIngredientsPurchased = ingredientsInRecipe.all { it.isPurchased }
-                val representativeDate = ingredientsInRecipe.minOfOrNull { it.addedAt?.time ?: Long.MAX_VALUE }?.let { Date(it) } ?: Date(Long.MAX_VALUE)
                 val isExpanded = recipeExpandedStates.getOrPut(recipeId) { true } // Default a expandido
-                sortableUnits.add(Triple(allIngredientsPurchased, representativeDate,
-                    ShoppingDisplayItem.RecipeHeader(recipeId, ingredientsInRecipe.first().recipeName ?: "Receta", isExpanded)
-                ))
+                val header = ShoppingDisplayItem.RecipeHeader(
+                    recipeId,
+                    ingredientsInRecipe.first().recipeName ?: "Receta", // Tomar nombre del primer ingrediente
+                    isExpanded
+                )
+                recipeDisplayUnits.add(Pair(header, ingredientsInRecipe))
             }
         }
 
-        standaloneItems.forEach { item ->
-            val sortDate = item.addedAt ?: Date(Long.MAX_VALUE) // Ítems nuevos (addedAt=null) arriba
-            sortableUnits.add(Triple(item.isPurchased, sortDate, ShoppingDisplayItem.StandaloneItem(item, item.documentId!!)))
-        }
+        // 3. Ordenar las recetas (los grupos de RecipeHeader)
+        // Criterio:
+        //   a. Recetas con al menos un ítem no comprado (isPurchased = false) van primero.
+        //   b. Dentro de ese grupo, y dentro del grupo de recetas con todos los ítems comprados,
+        //      ordenar por la fecha de adición más temprana ('addedAt') de cualquiera de sus ingredientes (ASC - más antiguas primero).
+        recipeDisplayUnits.sortWith(
+            compareBy<Pair<ShoppingDisplayItem.RecipeHeader, List<ShoppingListItem>>> { pair ->
+                // true si todos los ingredientes están comprados, false si alguno no lo está.
+                // Queremos que false (algún no comprado) venga antes que true (todos comprados).
+                pair.second.all { it.isPurchased }
+            }.thenBy { pair ->
+                // Para el desempate, usamos la fecha más temprana de adición de un ingrediente.
+                // Las recetas más "antiguas" (según su primer ingrediente añadido) van primero.
+                pair.second.mapNotNull { it.addedAt }.minOrNull() ?: Date(Long.MAX_VALUE)
+            }
+        )
 
-        sortableUnits.sortWith(compareBy<Triple<Boolean, Date, ShoppingDisplayItem>> { it.first }.thenByDescending { it.second })
-
-        sortableUnits.forEach { unit ->
-            val displayItem = unit.third
-            displayList.add(displayItem) // Añadir Header o StandaloneItem
-
-            if (displayItem is ShoppingDisplayItem.RecipeHeader && displayItem.isExpanded) {
-                itemsFromRecipesGrouped[displayItem.recipeId]
-                    ?.sortedWith(compareBy({ it.isPurchased }, { it.addedAt ?: Date(Long.MAX_VALUE) }))
-                    ?.forEach { ingredient ->
+        // 4. Añadir recetas ordenadas y sus ingredientes a la displayList
+        recipeDisplayUnits.forEach { (header, ingredients) ->
+            displayList.add(header) // Añadir el RecipeHeader
+            if (header.isExpanded) {
+                // Ordenar los ingredientes DENTRO de cada receta:
+                // isPurchased ASC (no comprados primero), addedAt ASC (más antiguos primero dentro de cada estado de compra)
+                ingredients
+                    .sortedWith(compareBy({ it.isPurchased }, { it.addedAt ?: Date(Long.MAX_VALUE) }))
+                    .forEach { ingredient ->
                         ingredient.documentId?.let { docId ->
                             displayList.add(ShoppingDisplayItem.RecipeIngredient(ingredient, docId))
                         }
@@ -256,7 +268,18 @@ class ShoppingListFragment : Fragment() {
             }
         }
 
+        // 5. Procesar y añadir los ítems individuales (standalone)
+        // standaloneRawItems ya están ordenados por Firestore: isPurchased ASC, addedAt DESC
+        // (no comprados más nuevos primero, luego comprados más nuevos primero)
+        // Este orden es el que queremos para los ítems sueltos al final de la lista.
+        standaloneRawItems.forEach { item ->
+            item.documentId?.let { docId ->
+                displayList.add(ShoppingDisplayItem.StandaloneItem(item, docId))
+            }
+        }
+
         Log.d(TAG, "DisplayList final para el adaptador (${displayList.size} ítems).")
+        // Descomenta la siguiente línea si necesitas depurar el contenido de displayList:
         // displayList.forEachIndexed { index, dItem -> Log.d(TAG, " Item $index: $dItem") }
 
 
@@ -284,7 +307,7 @@ class ShoppingListFragment : Fragment() {
         AlertDialog.Builder(requireContext())
             .setTitle("Eliminar Receta de la Lista")
             .setMessage("¿Eliminar todos los ingredientes de la receta '$recipeName' de la lista de la compra?")
-            .setIcon(R.drawable.ic_delete) // O el que prefieras
+            .setIcon(R.drawable.ic_delete)
             .setPositiveButton("Sí, Eliminar") { _, _ ->
                 deleteRecipeIngredientsFromFirestore(recipeId, recipeName)
             }
@@ -306,8 +329,6 @@ class ShoppingListFragment : Fragment() {
             .addOnSuccessListener { querySnapshot ->
                 if (querySnapshot.isEmpty) {
                     Log.d(TAG, "No se encontraron ingredientes para la receta ID: $recipeId para eliminar.")
-                    // No es necesariamente un error, podría haberse eliminado ya.
-                    // Toast.makeText(requireContext(), "No hay ingredientes para esta receta.", Toast.LENGTH_SHORT).show()
                     return@addOnSuccessListener
                 }
                 val batch = db.batch()
@@ -318,8 +339,6 @@ class ShoppingListFragment : Fragment() {
                     .addOnSuccessListener {
                         Log.d(TAG, "Todos los ingredientes de la receta '$recipeName' eliminados.")
                         Toast.makeText(requireContext(), "Ingredientes de '$recipeName' eliminados.", Toast.LENGTH_SHORT).show()
-                        // El SnapshotListener actualizará la UI.
-                        // También eliminar el estado de expansión de la receta si ya no tiene items.
                         recipeExpandedStates.remove(recipeId)
                     }
                     .addOnFailureListener { e ->
@@ -333,7 +352,6 @@ class ShoppingListFragment : Fragment() {
             }
     }
 
-    // --- Métodos existentes sin cambios ---
     private fun updateItemPurchasedStatusInFirestore(documentId: String, isPurchased: Boolean) {
         val userId = auth.currentUser?.uid ?: return
         db.collection("users").document(userId).collection("shoppingListItems").document(documentId)
@@ -372,7 +390,7 @@ class ShoppingListFragment : Fragment() {
                 .addOnSuccessListener {
                     Log.d(TAG, "Todos los ítems borrados de Firestore.")
                     Toast.makeText(requireContext(), "Lista de compra borrada.", Toast.LENGTH_SHORT).show()
-                    recipeExpandedStates.clear() // Limpiar todos los estados de expansión
+                    recipeExpandedStates.clear()
                 }
                 .addOnFailureListener { e ->
                     Log.e(TAG, "Error al ejecutar batch delete:", e)
@@ -386,7 +404,7 @@ class ShoppingListFragment : Fragment() {
     }
 
     private fun updateEmptyViewAndClearButtonVisibility(displayItems: List<ShoppingDisplayItem>) {
-        if (view == null) return // Fragment puede estar destruyéndose
+        if (view == null) return
         val isEmpty = displayItems.isEmpty()
         textViewShoppingListEmpty.isVisible = isEmpty
         recyclerViewShoppingListItems.isVisible = !isEmpty
