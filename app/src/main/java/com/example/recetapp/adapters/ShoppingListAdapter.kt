@@ -1,4 +1,3 @@
-// --- File: com/example/recetapp/adapters/ShoppingListAdapter.kt ---
 package com.example.recetapp.adapters
 
 import android.content.Context
@@ -21,7 +20,6 @@ class ShoppingListAdapter(
     private val onItemCheckedChanged: (shoppingListItem: ShoppingListItem, documentId: String, isChecked: Boolean) -> Unit,
     private val onDeleteClick: (shoppingListItem: ShoppingListItem, documentId: String) -> Unit,
     private val onRecipeHeaderClick: (recipeId: String, recipeName: String) -> Unit, // Puede usarse para toggle o para otra acción
-    // Nuevos Callbacks
     private val onToggleRecipeExpandClick: (recipeId: String) -> Unit,
     private val onDeleteRecipeClick: (recipeId: String, recipeName: String) -> Unit
 ) : ListAdapter<ShoppingDisplayItem, RecyclerView.ViewHolder>(ShoppingDisplayItemDiffCallback()) {
@@ -35,7 +33,6 @@ class ShoppingListAdapter(
         return when (getItem(position)) {
             is ShoppingDisplayItem.RecipeHeader -> VIEW_TYPE_RECIPE_HEADER
             is ShoppingDisplayItem.RecipeIngredient, is ShoppingDisplayItem.StandaloneItem -> VIEW_TYPE_SHOPPING_ITEM
-            // else -> throw IllegalStateException("Unknown view type at position $position") // Mejor manejo para casos desconocidos
         }
     }
 
@@ -70,13 +67,11 @@ class ShoppingListAdapter(
 
     inner class RecipeHeaderViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val recipeNameTextView: TextView = itemView.findViewById(R.id.textViewRecipeNameHeader)
-        // Nuevos botones
         private val toggleExpandButton: ImageButton = itemView.findViewById(R.id.buttonToggleExpandRecipe)
         private val deleteRecipeButton: ImageButton = itemView.findViewById(R.id.buttonDeleteRecipe)
 
         fun bind(headerItem: ShoppingDisplayItem.RecipeHeader) {
-            recipeNameTextView.text = headerItem.recipeName // Ya no es necesario añadir ":" aquí si el layout lo gestiona bien
-
+            recipeNameTextView.text = headerItem.recipeName
             // Configurar icono de expansión
             if (headerItem.isExpanded) {
                 toggleExpandButton.setImageResource(R.drawable.ic_keyboard_arrow_up)
@@ -87,7 +82,7 @@ class ShoppingListAdapter(
             // Click en el layout del header para expandir/colapsar (opcional, además del botón)
             itemView.setOnClickListener {
                 if (bindingAdapterPosition != RecyclerView.NO_POSITION) {
-                    onRecipeHeaderClick(headerItem.recipeId, headerItem.recipeName) // O llama a onToggleRecipeExpandClick directamente
+                    onRecipeHeaderClick(headerItem.recipeId, headerItem.recipeName)
                 }
             }
 
@@ -163,9 +158,6 @@ class ShoppingListAdapter(
     }
 }
 
-// DiffUtil.ItemCallback no necesita cambios si RecipeHeader es una data class,
-// ya que la comparación por defecto de 'areContentsTheSame' con 'oldItem == newItem'
-// comparará todos los campos, incluyendo 'isExpanded'.
 class ShoppingDisplayItemDiffCallback : DiffUtil.ItemCallback<ShoppingDisplayItem>() {
     override fun areItemsTheSame(oldItem: ShoppingDisplayItem, newItem: ShoppingDisplayItem): Boolean {
         return when {
@@ -180,8 +172,6 @@ class ShoppingDisplayItemDiffCallback : DiffUtil.ItemCallback<ShoppingDisplayIte
     }
 
     override fun areContentsTheSame(oldItem: ShoppingDisplayItem, newItem: ShoppingDisplayItem): Boolean {
-        // Para data classes, la comparación '==' compara todos los campos.
-        // Para RecipeIngredient y StandaloneItem, podríamos querer comparar el shoppingListItem interno.
         return when {
             oldItem is ShoppingDisplayItem.RecipeHeader && newItem is ShoppingDisplayItem.RecipeHeader ->
                 oldItem == newItem // Compara recipeId, recipeName, y isExpanded

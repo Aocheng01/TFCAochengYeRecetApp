@@ -2,10 +2,10 @@ package com.example.recetapp.data
 
 import com.google.gson.annotations.SerializedName
 import android.os.Parcelable
-import com.google.firebase.firestore.IgnoreExtraProperties // Asegúrate de importar esto
+import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
 
-@IgnoreExtraProperties // <-- AÑADIDO
+@IgnoreExtraProperties
 @Parcelize
 data class Recipe(
     @SerializedName("yield") val servings: Float? = null,
@@ -28,9 +28,4 @@ data class Recipe(
     val instructions: List<String>? = null,
     val totalNutrientsDetailed: Map<String, NutrientDetail>? = null,
     var isFavorite: Boolean = false
-    // Si el campo 'addedToFavoritesAt' es importante y quieres usarlo,
-    // deberías añadirlo aquí, por ejemplo:
-    // val addedToFavoritesAt: com.google.firebase.Timestamp? = null,
-    // Y si 'stability' es un campo que quieres usar:
-    // val stability: String? = null, // o el tipo de dato que sea
 ) : Parcelable

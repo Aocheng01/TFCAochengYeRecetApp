@@ -1,45 +1,31 @@
 package com.example.recetapp.api
 
-import com.example.recetapp.BuildConfig // <-- Importa BuildConfig
-import com.example.recetapp.data.RecipeResponse // Asegúrate que la ruta sea correcta
+import com.example.recetapp.BuildConfig
+import com.example.recetapp.data.RecipeResponse
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
 import retrofit2.http.Url
 
 interface EdamamApiService {
-
-    // Constantes para parámetros comunes (opcional pero útil)
+    // Constantes para parámetros comunes
     companion object {
         const val API_TYPE = "public"
-        // ¡¡NO pongas tus claves aquí en producción!! Úsalas de forma segura.
         val APP_ID: String = BuildConfig.EDAMAM_APP_ID // Se obtiene de BuildConfig
-        val APP_KEY: String = BuildConfig.EDAMAM_APP_KEY // Se obtiene de
+        val APP_KEY: String = BuildConfig.EDAMAM_APP_KEY
     }
 
     @GET("api/recipes/v2")
     fun searchRecipes(
         @Query("type") type: String = API_TYPE, // Siempre 'public' para búsqueda estándar
         @Query("q") query: String,              // El término de búsqueda del usuario
-        @Query("app_id") appId: String = APP_ID,     // Añade "= APP_ID"
-        @Query("app_key") appKey: String = APP_KEY,   // Añade "= APP_KEY"
-
-        // --- Parámetros Opcionales (ejemplos, añade/quita según necesites) ---
-        // @Query("diet") diet: String? = null,         // ej. "balanced", "high-protein", "low-carb"
-        // @Query("health") health: String? = null,     // ej. "vegetarian", "peanut-free" (pueden ser múltiples separados por &health=...)
-        // @Query("cuisineType") cuisineType: String? = null, // ej. "Mexican", "Italian"
-        // @Query("mealType") mealType: String? = null,    // ej. "Lunch", "Dinner", "Snack"
-        // @Query("calories") calories: String? = null,   // Rango ej. "100-300" o un número "300" (significa <=300)
-        // @Query("time") time: String? = null,           // Rango ej. "1-60" (minutos) o "60+"
-        @Query("imageSize") imageSize: String = "REGULAR" // Puedes pedir "LARGE", "SMALL", "THUMBNAIL"
-        // @Query("random") random: Boolean? = null     // Para obtener recetas aleatorias
+        @Query("app_id") appId: String = APP_ID,
+        @Query("app_key") appKey: String = APP_KEY,
+        @Query("imageSize") imageSize: String = "REGULAR"
 
     ): Call<RecipeResponse> // Devuelve un objeto Call que Retrofit puede ejecutar
 
-
-
-    @GET // No se especifica un endpoint aquí porque la URL vendrá completa
+    @GET
     fun getNextPageRecipes(@Url nextPageUrl: String): Call<RecipeResponse>
-    // El interceptor seguirá añadiendo Edamam-Account-User.
     // app_id y app_key ya vienen en la nextPageUrl que proporciona Edamam.
 }

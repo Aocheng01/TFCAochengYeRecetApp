@@ -1,4 +1,4 @@
-package com.example.recetapp.utils // O el paquete donde lo hayas creado
+package com.example.recetapp.utils
 
 import android.view.View
 import androidx.viewpager2.widget.ViewPager2
@@ -15,11 +15,11 @@ class ZoomOutPageTransformer : ViewPager2.PageTransformer {
             val pageWidth = width
             val pageHeight = height
             when {
-                position < -1 -> { // [-Infinity,-1)
+                position < -1 -> {
                     // Esta página está fuera de la pantalla hacia la izquierda.
                     alpha = 0f
                 }
-                position <= 1 -> { // [-1,1]
+                position <= 1 -> {
                     // Modifica la transición de encogimiento por defecto
                     val scaleFactor = max(MIN_SCALE, 1 - abs(position))
                     val vertMargin = pageHeight * (1 - scaleFactor) / 2

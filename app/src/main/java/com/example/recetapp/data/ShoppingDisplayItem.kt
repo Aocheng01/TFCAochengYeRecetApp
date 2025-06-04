@@ -1,4 +1,3 @@
-// --- File: com/example/recetapp/data/ShoppingDisplayItem.kt ---
 package com.example.recetapp.data
 
 sealed class ShoppingDisplayItem {
@@ -6,7 +5,7 @@ sealed class ShoppingDisplayItem {
     data class RecipeHeader(
         val recipeId: String,
         val recipeName: String,
-        var isExpanded: Boolean = true // Nuevo campo para el estado
+        var isExpanded: Boolean = true
     ) : ShoppingDisplayItem()
 
     data class RecipeIngredient(

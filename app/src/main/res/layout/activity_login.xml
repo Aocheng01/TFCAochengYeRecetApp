@@ -7,16 +7,27 @@
     android:padding="16dp"
     tools:context=".LoginActivity">
 
+    <ImageView
+        android:id="@+id/imageViewAppLogo"
+        android:layout_width="208dp"
+        android:layout_height="177dp"
+        android:layout_marginTop="32dp"
+        android:contentDescription="Logo de la aplicación"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        android:src="@drawable/logo2" />
+
     <TextView
         android:id="@+id/textViewLoginTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Iniciar Sesión"
         android:textAppearance="@style/TextAppearance.Material3.HeadlineMedium"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/imageViewAppLogo"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="32dp"/>
+        android:layout_marginTop="24dp"/>
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/textInputLayoutEmail"

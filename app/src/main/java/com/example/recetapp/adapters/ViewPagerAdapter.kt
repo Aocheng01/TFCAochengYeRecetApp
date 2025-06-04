@@ -10,10 +10,10 @@ import com.example.recetapp.fragments.ShoppingListFragment
 
 class ViewPagerAdapter(fragmentActivity: FragmentActivity) : FragmentStateAdapter(fragmentActivity) {
 
-    override fun getItemCount(): Int = 4 // Se mantiene en 4 pestañas
+    override fun getItemCount(): Int = 4 //4 pestañas
 
     override fun createFragment(position: Int): Fragment {
-        // ----- MODIFICADO: Nuevo orden de los fragmentos -----
+        // orden de los fragmentos -----
         return when (position) {
             0 -> PantryFragment()          // Izquierda: Despensa
             1 -> SearchRecipesFragment()    // Centro (Principal): Búsqueda

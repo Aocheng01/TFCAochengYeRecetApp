@@ -8,8 +8,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.recetapp.R
 
-// Modelo de datos simple para el item de la despensa (podría ser más complejo)
-data class PantryItem(val id: String, val name: String) // id será el documentId de Firestore
+
+data class PantryItem(val id: String, val name: String)
 
 class PantryAdapter(
     private val pantryItemsList: MutableList<PantryItem>,
@@ -64,16 +64,6 @@ class PantryAdapter(
         notifyDataSetChanged() // Podría optimizarse con DiffUtil
     }
 
-    // Añade un solo item (usado después de añadir a Firestore y obtener confirmación o ID)
-    // Esta función podría no ser necesaria si siempre recargas la lista completa desde Firestore
-    // o si Firestore te devuelve el item añadido para insertarlo localmente.
-    // Por ahora, la comentaremos y nos basaremos en recargar la lista.
-    /*
-    fun addItem(item: PantryItem) {
-        pantryItemsList.add(item)
-        notifyItemInserted(pantryItemsList.size - 1)
-    }
-    */
 
     fun removeItem(position: Int) {
         if (position >= 0 && position < pantryItemsList.size) {

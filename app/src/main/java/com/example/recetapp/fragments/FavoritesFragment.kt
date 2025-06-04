@@ -152,14 +152,14 @@ class FavoritesFragment : Fragment() {
         startActivity(intent)
     }
 
-    // ----- NUEVOS MÉTODOS PARA BORRAR TODOS LOS FAVORITOS -----
+    // ----- MÉTODOS PARA BORRAR TODOS LOS FAVORITOS -----
     private fun showDeleteAllConfirmationDialog() {
         if (!isAdded) return
 
         AlertDialog.Builder(requireContext())
             .setTitle("Confirmar Eliminación")
             .setMessage("¿Estás seguro de que quieres eliminar TODAS tus recetas favoritas? Esta acción no se puede deshacer.")
-            .setIcon(R.drawable.ic_delete) // Puedes usar ic_delete o ic_warning
+            .setIcon(R.drawable.ic_delete)
             .setPositiveButton("Sí, Borrar Todo") { _, _ ->
                 deleteAllFavoriteRecipes()
             }
@@ -192,8 +192,6 @@ class FavoritesFragment : Fragment() {
                     .addOnSuccessListener {
                         Log.d(TAG, "Todas las recetas favoritas han sido eliminadas.")
                         Toast.makeText(context, "Todos los favoritos eliminados.", Toast.LENGTH_SHORT).show()
-                        // El listener de Firestore actualizará la UI automáticamente.
-                        // updateEmptyViewVisibility() se llamará desde el listener.
                     }
                     .addOnFailureListener { e ->
                         Log.e(TAG, "Error al eliminar todos los favoritos.", e)

@@ -38,7 +38,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var googleSignInClient: GoogleSignInClient
     private lateinit var googleSignInLauncher: ActivityResultLauncher<Intent>
     private lateinit var googleSignInButton: SignInButton
-    private lateinit var textViewForgotPassword: TextView // NUEVA PROPIEDAD
+    private lateinit var textViewForgotPassword: TextView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,7 +50,7 @@ class LoginActivity : AppCompatActivity() {
         passwordEditText = findViewById(R.id.editTextLoginPassword)
         loginButton = findViewById(R.id.buttonLoginEmail)
         registerButton = findViewById(R.id.buttonRegisterEmail)
-        textViewForgotPassword = findViewById(R.id.textViewForgotPassword) // INICIALIZAR TEXTVIEW
+        textViewForgotPassword = findViewById(R.id.textViewForgotPassword)
 
         registerButton.setOnClickListener{
             val email = emailEditText.text.toString().trim()
@@ -180,7 +180,7 @@ class LoginActivity : AppCompatActivity() {
         finish()
     }
 
-    // ----- NUEVO MÉTODO PARA MOSTRAR DIÁLOGO DE RECUPERACIÓN -----
+    //MÉTODO PARA MOSTRAR DIÁLOGO DE RECUPERACIÓN -----
     private fun showForgotPasswordDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("Recuperar Contraseña")
@@ -189,7 +189,7 @@ class LoginActivity : AppCompatActivity() {
         val inputEmail = EditText(this)
         inputEmail.inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
 
-        // Añadir un poco de padding al EditText
+        // Añadir padding al EditText
         val lp = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.MATCH_PARENT
@@ -222,7 +222,7 @@ class LoginActivity : AppCompatActivity() {
     }
     // ----------------------------------------------------------
 
-    // ----- NUEVO MÉTODO PARA ENVIAR CORREO DE RECUPERACIÓN -----
+    // MÉTODO PARA ENVIAR CORREO DE RECUPERACIÓN -----
     private fun sendPasswordResetEmail(email: String) {
         auth.sendPasswordResetEmail(email)
             .addOnCompleteListener { task ->

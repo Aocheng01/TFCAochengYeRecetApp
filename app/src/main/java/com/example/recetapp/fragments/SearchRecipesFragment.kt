@@ -142,7 +142,7 @@ class SearchRecipesFragment : Fragment() {
             recipeAdapter.submitNewList(emptyList())
         }
 
-        // ----- MODIFICADO: Parsear la entrada por comas para búsquedas individuales -----
+        // -----  Parsear la entrada por comas para búsquedas individuales -----
         val searchTerms = userInput.split(',')
             .map { it.trim().lowercase(java.util.Locale.getDefault()) }
             .filter { it.isNotBlank() }
@@ -160,11 +160,10 @@ class SearchRecipesFragment : Fragment() {
         startIndividualTermSearches(searchTerms, userInput) // Pasar userInput para el mensaje final
     }
 
-    // ----- MODIFICADO Y RESTAURADO: Búsqueda individual por término y combinación de resultados (Lógica OR) -----
+    // ----- Búsqueda individual por término y combinación de resultados (Lógica OR) -----
     private fun startIndividualTermSearches(searchTerms: List<String>, originalUserInput: String) {
         if (!isAdded) return
         isLoading = true
-        // El mensaje "Buscando..." ya se ha puesto en performSearch
 
         val accumulatedHits = mutableListOf<Hit>()
 

@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         auth = Firebase.auth
 
-        // ----- NUEVO: Configurar GoogleSignInClient para el logout -----
+        // ----- Configurar GoogleSignInClient para el logout -----
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(getString(R.string.default_web_client_id)) // Asegúrate que este string existe
             .requestEmail()
@@ -73,8 +73,6 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
         viewPager.setPageTransformer(ZoomOutPageTransformer())
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            // Asegúrate que este orden coincida con tu ViewPagerAdapter MÁS RECIENTE
-            // Si el orden es: Despensa(0), Buscar(1), Lista Compra(2), Favoritos(3)
             tab.text = when (position) {
                 0 -> "Despensa"
                 1 -> "Buscar"
@@ -88,8 +86,6 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             Log.w(TAG, "Usuario no logueado en MainActivity, volviendo a Login.")
             navigateToLogin()
         } else {
-            // Ajusta esto al índice de tu pestaña "Buscar" según ViewPagerAdapter
-            // Si Buscar es la posición 1:
             viewPager.setCurrentItem(1, false)
         }
 
@@ -130,10 +126,9 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
                         toggleTheme()
                     }
                     3 -> { // Cerrar Sesión
-                        // ----- MODIFICADO: Añadir Google Sign Out -----
+
                         auth.signOut() // Firebase sign out
-                        googleSignInClient.signOut().addOnCompleteListener {
-                            // Opcional: Manejar el resultado del signOut de Google
+                        googleSignInClient.signOut().addOnCompleteListener { // Google Sign Out -----
                             Log.d(TAG, "Google Sign-Out completado.")
                         }
                         // ------------------------------------------
@@ -182,7 +177,6 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         AppCompatDelegate.setDefaultNightMode(newNightMode)
         themePrefs.edit().putInt(PREF_KEY_THEME, newNightMode).apply()
-        // recreate() // Opcional: Para aplicar el tema inmediatamente.
     }
 
     override fun onSearchRequestedFromPantry(query: String) {

@@ -1,5 +1,4 @@
-// En tu archivo NutrientsInfo.kt (o donde tengas estas clases)
-package com.example.recetapp.data // O tu paquete
+package com.example.recetapp.data
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
@@ -12,7 +11,6 @@ data class NutrientsInfo(
     @SerializedName("CHOCDF") val carbs: Nutrient?,
     @SerializedName("PROCNT") val protein: Nutrient?,
     @SerializedName("FIBTG") val fiber: Nutrient?
-    // ... más nutrientes ...
 ) : Parcelable
 
 @Parcelize

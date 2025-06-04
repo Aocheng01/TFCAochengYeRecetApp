@@ -1,10 +1,10 @@
 package com.example.recetapp.data
 
 import android.os.Parcelable
-import com.google.firebase.firestore.IgnoreExtraProperties // Asegúrate de importar esto
+import com.google.firebase.firestore.IgnoreExtraProperties
 import kotlinx.parcelize.Parcelize
 
-@IgnoreExtraProperties // <-- AÑADIDO
+@IgnoreExtraProperties
 @Parcelize
 data class Ingredient(
     val text: String? = null,
@@ -15,6 +15,4 @@ data class Ingredient(
     val foodCategory: String? = null,
     val foodId: String? = null,
     val image: String? = null
-    // Si 'stability' es un campo que quieres usar en Ingredient:
-    // val stability: String? = null,
 ) : Parcelable

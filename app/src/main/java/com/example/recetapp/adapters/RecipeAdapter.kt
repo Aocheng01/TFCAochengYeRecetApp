@@ -53,7 +53,6 @@ class RecipeAdapter(
             placeholder(R.drawable.ic_placeholder_image)
             error(R.drawable.ic_error_image)
         }
-        // No es necesario setear el listener aquí si ya lo hiciste en el init del ViewHolder
     }
 
     override fun getItemCount(): Int = recipes.size

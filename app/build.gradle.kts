@@ -43,8 +43,8 @@ android {
 
 
     buildFeatures {
-        viewBinding = true // Esta línea activa View Binding
-        buildConfig = true // Esta línea activa la generación de BuildConfig
+        viewBinding = true // activa View Binding
+        buildConfig = true // activa la generación de BuildConfig
     }
 
 }
@@ -71,8 +71,6 @@ dependencies {
 
     // Importa Firebase Bill of Materials (BoM) - gestiona versiones
     implementation(platform("com.google.firebase:firebase-bom:33.13.0"))
-
-    // When using the BoM, don't specify versions in Firebase dependencies
     implementation("com.google.firebase:firebase-analytics")
 
     // Dependencia de Firebase Authentication (KTX para extensiones Kotlin)
@@ -82,8 +80,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-auth:21.2.0")
 
     //dependencias para viewpager2
-    implementation("androidx.viewpager2:viewpager2:1.1.0") // O la última versión estable
-    implementation("com.google.android.material:material:1.12.0") // O la última versión estable (para TabLayout)
-    implementation("androidx.fragment:fragment-ktx:1.7.1") // O la última versión estable
+    implementation("androidx.viewpager2:viewpager2:1.1.0")
+    implementation("com.google.android.material:material:1.12.0")
+    implementation("androidx.fragment:fragment-ktx:1.7.1")
     implementation("com.google.mlkit:translate:17.0.2")
 }

@@ -1,5 +1,3 @@
-// --- File: com/example/recetapp/data/ShoppingListItem.kt ---
-// --- Código para el modelo de ítem de la lista de compra ---
 package com.example.recetapp.data
 
 import com.google.firebase.firestore.IgnoreExtraProperties
@@ -16,9 +14,6 @@ data class ShoppingListItem(
     @ServerTimestamp // Firestore pondrá el timestamp del servidor aquí
     var addedAt: Date? = null,
 
-    // El ID del documento de Firestore no se incluye aquí porque se obtiene
-    // por separado o no es parte de los datos que *escribes* al crear un nuevo ítem con .add()
-    // Si lo necesitas en el objeto después de leerlo, puedes mapearlo.
     @get:com.google.firebase.firestore.Exclude @set:com.google.firebase.firestore.Exclude
     var documentId: String? = null // Para mantener el ID del documento después de leerlo
 ) {

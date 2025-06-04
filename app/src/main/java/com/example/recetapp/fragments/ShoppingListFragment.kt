@@ -239,11 +239,11 @@ class ShoppingListFragment : Fragment() {
         // Criterio:
         //   a. Recetas con al menos un ítem no comprado (isPurchased = false) van primero.
         //   b. Dentro de ese grupo, y dentro del grupo de recetas con todos los ítems comprados,
-        //      ordenar por la fecha de adición más temprana ('addedAt') de cualquiera de sus ingredientes (ASC - más antiguas primero).
+        //      ordenar por la fecha de adición más temprana (addedAt) de cualquiera de sus ingredientes (ASC - más antiguas primero).
         recipeDisplayUnits.sortWith(
             compareBy<Pair<ShoppingDisplayItem.RecipeHeader, List<ShoppingListItem>>> { pair ->
                 // true si todos los ingredientes están comprados, false si alguno no lo está.
-                // Queremos que false (algún no comprado) venga antes que true (todos comprados).
+                // false (algún no comprado) venga antes que true (todos comprados).
                 pair.second.all { it.isPurchased }
             }.thenBy { pair ->
                 // Para el desempate, usamos la fecha más temprana de adición de un ingrediente.
@@ -279,8 +279,6 @@ class ShoppingListFragment : Fragment() {
         }
 
         Log.d(TAG, "DisplayList final para el adaptador (${displayList.size} ítems).")
-        // Descomenta la siguiente línea si necesitas depurar el contenido de displayList:
-        // displayList.forEachIndexed { index, dItem -> Log.d(TAG, " Item $index: $dItem") }
 
 
         if (::shoppingListAdapter.isInitialized) {

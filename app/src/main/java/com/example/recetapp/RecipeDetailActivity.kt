@@ -45,8 +45,6 @@ import com.google.mlkit.nl.translate.Translator
 import com.google.mlkit.nl.translate.TranslatorOptions
 
 class RecipeDetailActivity : AppCompatActivity() {
-
-    // ... (companion object y propiedades de clase sin cambios)
     companion object {
         const val EXTRA_RECIPE = "extra_recipe_data"
         private const val TAG = "RecipeDetailActivity"
@@ -67,6 +65,7 @@ class RecipeDetailActivity : AppCompatActivity() {
             "sulfite-free" to "Sin Sulfitos", "tree-nut-free" to "Sin Frutos Secos de Árbol",
             "vegan" to "Vegano", "vegetarian" to "Vegetariano", "wheat-free" to "Sin Trigo"
         ).mapKeys { it.key.lowercase(Locale.ROOT) }
+
 
         private val nutrientNameTranslations = mapOf(
             "energy" to "Energía", "fat" to "Grasas Totales", "total lipid (fat)" to "Grasas Totales",
@@ -121,7 +120,6 @@ class RecipeDetailActivity : AppCompatActivity() {
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // ... (código onCreate existente sin cambios hasta populateUI)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
 
@@ -152,7 +150,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun initializeViews() {
-        // ... (código initializeViews existente sin cambios)
         collapsingToolbar = findViewById(R.id.collapsingToolbar)
         imageViewRecipeDetail = findViewById(R.id.imageViewRecipeDetail)
         textViewRecipeLabelBody = findViewById(R.id.textViewRecipeLabelDetail_Body)
@@ -177,7 +174,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun initializeTranslator() {
-        // ... (código initializeTranslator existente sin cambios)
         val options = TranslatorOptions.Builder()
             .setSourceLanguage(TranslateLanguage.ENGLISH)
             .setTargetLanguage(TranslateLanguage.SPANISH)
@@ -217,7 +213,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun populateUI(recipe: Recipe) {
-        // ... (código anterior de populateUI hasta la sección de URL)
         collapsingToolbar.title = recipe.label ?: "Detalle de Receta"
         textViewRecipeLabelBody.text = recipe.label ?: "N/A"
 
@@ -294,7 +289,7 @@ class RecipeDetailActivity : AppCompatActivity() {
             textViewRecipeUrlDetail.visibility = View.VISIBLE
             sourceOrUrlExists = true
 
-            // ----- MODIFICACIÓN PARA HACER LA URL CLICKEABLE -----
+            // -----PARA HACER LA URL CLICKEABLE -----
             textViewRecipeUrlDetail.setOnClickListener {
                 try {
                     val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(urlText))
@@ -304,19 +299,18 @@ class RecipeDetailActivity : AppCompatActivity() {
                     Toast.makeText(this, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show()
                 }
             }
-            // Opcional: subrayar el texto para que parezca más un enlace
-            // val spannableString = SpannableString(urlText)
-            // spannableString.setSpan(URLSpan(urlText), 0, urlText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-            // textViewRecipeUrlDetail.text = spannableString
-            // textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance() // Necesario si usas URLSpan para el clic por defecto
-            // -------------------------------------------------------
+            //subrayar el texto para que parezca más un enlace
+            val spannableString = SpannableString(urlText)
+            spannableString.setSpan(URLSpan(urlText), 0, urlText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            textViewRecipeUrlDetail.text = spannableString
+            textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance()
+
 
         } else {
             textViewRecipeUrlDetail.visibility = View.GONE
         }
         textViewSourceUrlTitle.visibility = if(sourceOrUrlExists) View.VISIBLE else View.GONE
 
-        // ... (resto del código de populateUI: listeners de FABs)
         fabFavorite.setOnClickListener {
             currentRecipe?.let {
                 if (it.isFavorite) {
@@ -335,7 +329,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun populateIngredientsUI(recipe: Recipe) {
-        // ... (código populateIngredientsUI existente, con las correcciones de !isFinishing())
         if (!::textViewIngredientsDetail.isInitialized) {
             Log.e(TAG, "populateIngredientsUI: textViewIngredientsDetail no inicializada.")
             return
@@ -404,7 +397,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun populateNutritionUI(recipe: Recipe){
-        // ... (código populateNutritionUI existente)
         val nutritionBuilder = StringBuilder()
         val servingsForNutrition = recipe.servings?.takeIf { it > 0f }
         val nutritionSectionTitleText: String = if (servingsForNutrition != null) {
@@ -458,7 +450,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun handleRecipeError() {
-        // ... (código handleRecipeError existente)
         if (!isFinishing && !isDestroyed) {
             if (::collapsingToolbar.isInitialized) { collapsingToolbar.title = "Error" }
             if (::textViewRecipeLabelBody.isInitialized) { textViewRecipeLabelBody.text = "Error al cargar detalles" }
@@ -468,7 +459,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
-        // ... (código updateFavoriteIcon existente)
         if(::fabFavorite.isInitialized) {
             if (isFav) {
                 fabFavorite.setImageResource(R.drawable.ic_favorite)
@@ -485,7 +475,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun addIngredientsToShoppingList(recipe: Recipe) {
-        // ... (código addIngredientsToShoppingList existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
             Toast.makeText(this, "Debes iniciar sesión para añadir a la lista.", Toast.LENGTH_SHORT).show()
@@ -540,7 +529,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun commitIngredientsToFirestoreBatch(itemsToAdd: List<String>, recipe: Recipe, userId: String) {
-        // ... (código commitIngredientsToFirestoreBatch existente, con las correcciones de !isFinishing())
         if (itemsToAdd.isEmpty()){
             Log.d(TAG, "commitIngredientsToFirestoreBatch: No hay items finales para añadir después del procesamiento.")
             if (!isDestroyed && !isFinishing()) Toast.makeText(this, "No se añadieron ingredientes (lista vacía después de procesar).", Toast.LENGTH_SHORT).show()
@@ -589,13 +577,11 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun getRecipeId(recipe: Recipe): String {
-        // ... (código getRecipeId existente)
         return recipe.uri?.substringAfterLast('#')
             ?: recipe.label!!.replace(Regex("[/\\\\#\\[\\]*?.:$]"), "_")
     }
 
     private fun checkIfFavorite(recipe: Recipe) {
-        // ... (código checkIfFavorite existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
             currentRecipe?.isFavorite = false
@@ -624,7 +610,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun saveRecipeToFavorites(recipe: Recipe) {
-        // ... (código saveRecipeToFavorites existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
             if (!isDestroyed && !isFinishing()) Toast.makeText(this, "Debes iniciar sesión para guardar favoritos", Toast.LENGTH_SHORT).show()
@@ -653,7 +638,6 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun removeRecipeFromFavorites(recipe: Recipe) {
-        // ... (código removeRecipeFromFavorites existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
             if (!isDestroyed && !isFinishing()) Toast.makeText(this, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
@@ -682,7 +666,6 @@ class RecipeDetailActivity : AppCompatActivity() {
 
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed() // Esto ya llama a onBackPressed() si no hay nada más en la pila de back
-        // La animación se maneja en onBackPressed
         return true
     }
 

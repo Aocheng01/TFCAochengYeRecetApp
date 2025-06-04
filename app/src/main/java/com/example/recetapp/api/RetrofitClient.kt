@@ -1,22 +1,18 @@
-package com.example.recetapp.api // Asegúrate que este sea tu paquete
+package com.example.recetapp.api
 
 import com.example.recetapp.BuildConfig // Para leer las claves
-import okhttp3.Interceptor // Importa Interceptor
+import okhttp3.Interceptor
 import okhttp3.OkHttpClient
-// Si quitaste el logging interceptor, no necesitas esta importación:
-// import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
-
     // URL Base de la API de Edamam
     private const val BASE_URL = "https://api.edamam.com/"
+    // Definir el User ID (PARA PRUEBAS - usa uno fijo)
 
-    // --- Definir el User ID (PARA PRUEBAS - usa uno fijo) ---
-    // En una app real, este ID debería ser único para cada usuario de tu app.
-    private const val EDAMAM_USER_ID = "mi-usuario-prueba-001" // Puedes cambiar esto si quieres
+    private const val EDAMAM_USER_ID = "mi-usuario-prueba-001"
 
     // --- Interceptor para añadir la cabecera Edamam-Account-User ---
     private val headerInterceptor = Interceptor { chain ->
@@ -30,20 +26,9 @@ object RetrofitClient {
         chain.proceed(newRequest)
     }
 
-    /* --- Descomenta esto si quieres volver a activar el logging ---
-    private val loggingInterceptor = HttpLoggingInterceptor().apply {
-        level = if (BuildConfig.DEBUG) {
-            HttpLoggingInterceptor.Level.BODY
-        } else {
-            HttpLoggingInterceptor.Level.NONE
-        }
-    }
-    */
-
     // --- Cliente OkHttp personalizado para añadir el interceptor de cabecera ---
     private val okHttpClient = OkHttpClient.Builder()
-        .addInterceptor(headerInterceptor) // <--- AÑADE EL INTERCEPTOR DE CABECERA
-        // .addInterceptor(loggingInterceptor) // <--- Descomenta si reactivas el logging
+        .addInterceptor(headerInterceptor)
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .writeTimeout(30, TimeUnit.SECONDS)

@@ -2,7 +2,6 @@ package com.example.recetapp.fragments
 
 import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
@@ -36,7 +35,7 @@ interface PantryFragmentListener {
 
 class PantryFragment : Fragment() {
 
-    private val TAG = "PantryFragment"
+    private val TAG = "PantryFragment" // Se mantiene el TAG aunque no se usen los logs para fines de referencia, puede ser útil para depuración temporal.
 
     private lateinit var editTextPantryIngredient: TextInputEditText
     private lateinit var buttonAddPantryIngredient: Button
@@ -87,10 +86,9 @@ class PantryFragment : Fragment() {
         if (auth.currentUser != null) {
             attachPantryListener()
         } else {
-            Log.w(TAG, "Usuario no logueado, no se pueden cargar/escuchar items de despensa.")
             pantryItemListLocal.clear()
             if (::pantryAdapter.isInitialized) {
-                pantryAdapter.submitList(pantryItemListLocal.toList()) // Usar toList()
+                pantryAdapter.submitList(pantryItemListLocal.toList())
             }
             updateEmptyViewVisibility()
         }
@@ -99,13 +97,11 @@ class PantryFragment : Fragment() {
     override fun onStop() {
         super.onStop()
         pantryListenerRegistration?.remove()
-        Log.d(TAG, "Pantry listener desregistrado.")
     }
-
 
     private fun setupRecyclerView() {
         pantryAdapter = PantryAdapter(
-            pantryItemListLocal, // El adapter trabaja con la referencia a la lista mutable
+            pantryItemListLocal,
             onSearchClick = { ingredientName ->
                 listener?.onSearchRequestedFromPantry(ingredientName)
             },
@@ -134,8 +130,7 @@ class PantryFragment : Fragment() {
         }
         buttonSuggestRecipes.setOnClickListener {
             if (pantryItemListLocal.isNotEmpty()) {
-                val ingredientsQuery = pantryItemListLocal.joinToString(separator = ",") { it.name } // Cambiado a coma
-                Log.d(TAG, "Sugerir recetas con (ingredientes combinados): $ingredientsQuery")
+                val ingredientsQuery = pantryItemListLocal.joinToString(separator = ",") { it.name }
                 listener?.onSearchRequestedFromPantry(ingredientsQuery)
             } else {
                 Toast.makeText(requireContext(), "Tu despensa está vacía.", Toast.LENGTH_SHORT).show()
@@ -183,13 +178,11 @@ class PantryFragment : Fragment() {
             .collection("pantryItems").document(normalizedIngredientName)
             .set(pantryItemData)
             .addOnSuccessListener {
-                Log.d(TAG, "$ingredientName añadido/actualizado en Firestore con ID: $normalizedIngredientName")
                 Toast.makeText(requireContext(), "$ingredientName añadido a la despensa", Toast.LENGTH_SHORT).show()
                 editTextPantryIngredient.text?.clear()
                 // El SnapshotListener se encargará de actualizar la UI
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Error al añadir $ingredientName a Firestore", e)
                 Toast.makeText(requireContext(), "Error al añadir ingrediente: ${e.message}", Toast.LENGTH_LONG).show()
             }
         hideKeyboard()
@@ -208,11 +201,9 @@ class PantryFragment : Fragment() {
             .collection("shoppingListItems").document(normalizedItemNameId)
             .set(shoppingItemData)
             .addOnSuccessListener {
-                Log.d(TAG, "'$itemName' añadido a la lista de compra en Firestore con ID: $normalizedItemNameId")
                 Toast.makeText(requireContext(), "'$itemName' añadido a tu lista de la compra.", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Error al añadir '$itemName' a la lista de compra en Firestore", e)
                 Toast.makeText(requireContext(), "Error al añadir a la lista de compra: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
@@ -220,82 +211,63 @@ class PantryFragment : Fragment() {
     private fun attachPantryListener() {
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            Log.w(TAG, "Intento de adjuntar listener sin usuario logueado.")
             pantryListenerRegistration?.remove()
             pantryItemListLocal.clear()
-            if (::pantryAdapter.isInitialized) pantryAdapter.submitList(pantryItemListLocal.toList()) // Usar toList()
+            if (::pantryAdapter.isInitialized) pantryAdapter.submitList(pantryItemListLocal.toList())
             updateEmptyViewVisibility()
             return
         }
 
         pantryListenerRegistration?.remove()
 
-        Log.d(TAG, "Adjuntando SnapshotListener para items de despensa del usuario: $userId")
         pantryListenerRegistration = db.collection("users").document(userId)
             .collection("pantryItems")
             .orderBy("name", Query.Direction.ASCENDING)
             .addSnapshotListener { snapshots, e ->
                 if (e != null) {
-                    Log.w(TAG, "Error en SnapshotListener de despensa.", e)
                     Toast.makeText(requireContext(), "Error al cargar la despensa: ${e.message}", Toast.LENGTH_LONG).show()
                     return@addSnapshotListener
                 }
 
-                Log.d(TAG, "SnapshotListener (Despensa): Callback recibido.")
-                pantryItemListLocal.clear() // Limpiar antes de repoblar
+                pantryItemListLocal.clear()
 
                 if (snapshots != null && !snapshots.isEmpty) {
-                    Log.d(TAG, "SnapshotListener (Despensa): Recibidos ${snapshots.size()} documentos.")
                     for (document in snapshots.documents) {
                         val name = document.getString("name")
-                        Log.d(TAG, "SnapshotListener (Despensa): Procesando Doc ID: ${document.id}, Name: $name, Data: ${document.data}")
                         if (name != null) {
                             pantryItemListLocal.add(PantryItem(id = document.id, name = name))
-                            // ---- LOG ADICIONAL DENTRO DEL BUCLE ----
-                            Log.d(TAG, "SnapshotListener (Despensa): Añadido '${name}' a pantryItemListLocal. Tamaño actual: ${pantryItemListLocal.size}")
-                        } else {
-                            Log.w(TAG, "SnapshotListener (Despensa): Documento ${document.id} tiene campo 'name' nulo o ausente. Data: ${document.data}")
                         }
                     }
-                } else {
-                    Log.d(TAG, "SnapshotListener (Despensa): Snapshots es nulo o vacío.")
                 }
 
                 if (::pantryAdapter.isInitialized) {
-                    Log.d(TAG, "SnapshotListener (Despensa): Actualizando adaptador con ${pantryItemListLocal.size} items.")
-                    pantryAdapter.submitList(pantryItemListLocal.toList()) // ---- USAR toList() ----
-                } else {
-                    Log.w(TAG, "SnapshotListener (Despensa): pantryAdapter no inicializado al intentar submitList.")
+                    pantryAdapter.submitList(pantryItemListLocal.toList())
                 }
                 updateEmptyViewVisibility()
-                Log.d(TAG, "SnapshotListener (Despensa): FIN de callback. Items locales finales: ${pantryItemListLocal.size}")
             }
     }
 
     private fun deletePantryItemFromFirestore(documentId: String) {
         val userId = auth.currentUser?.uid
         if (userId == null || documentId.isBlank()) { /* ... */ return }
-        Log.d(TAG, "Intentando eliminar item de despensa con ID: $documentId")
         db.collection("users").document(userId)
             .collection("pantryItems").document(documentId)
             .delete()
             .addOnSuccessListener {
-                Log.d(TAG, "Documento $documentId eliminado de despensa en Firestore.")
                 Toast.makeText(requireContext(), "Ingrediente eliminado de la despensa.", Toast.LENGTH_SHORT).show()
             }
             .addOnFailureListener { ex ->
-                Log.w(TAG, "Error al eliminar documento $documentId de despensa en Firestore", ex)
                 Toast.makeText(requireContext(), "Error al eliminar: ${ex.message}", Toast.LENGTH_LONG).show()
             }
     }
 
     private fun updateEmptyViewVisibility() {
-        if (::pantryAdapter.isInitialized) { // Solo actualiza si el adapter está listo
+        if (::pantryAdapter.isInitialized) {
             val isEmpty = pantryAdapter.isEmpty()
             textViewPantryEmpty.isVisible = isEmpty
             recyclerViewPantryItems.isVisible = !isEmpty
             buttonSuggestRecipes.isVisible = !isEmpty
-        } else { // Si el adapter no está listo, asume que está vacío
+        } else {
             textViewPantryEmpty.isVisible = true
             recyclerViewPantryItems.isVisible = false
             buttonSuggestRecipes.isVisible = false
