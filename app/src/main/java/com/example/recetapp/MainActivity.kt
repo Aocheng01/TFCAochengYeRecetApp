@@ -15,10 +15,11 @@ import androidx.appcompat.widget.Toolbar
 import androidx.viewpager2.widget.ViewPager2
 import com.example.recetapp.adapters.ViewPagerAdapter
 import com.example.recetapp.fragments.PantryFragmentListener
-// ----- NUEVA IMPORTACIÓN -----
 import com.example.recetapp.utils.ZoomOutPageTransformer // Asegúrate que la ruta sea correcta
-// ---------------------------
 import com.example.recetapp.viewmodels.SearchViewModel
+import com.google.android.gms.auth.api.signin.GoogleSignIn // NUEVA IMPORTACIÓN
+import com.google.android.gms.auth.api.signin.GoogleSignInClient // NUEVA IMPORTACIÓN
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions // NUEVA IMPORTACIÓN
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayoutMediator
 import com.google.firebase.auth.FirebaseAuth
@@ -29,6 +30,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
     private val TAG = "MainActivity"
     private lateinit var auth: FirebaseAuth
+    private lateinit var googleSignInClient: GoogleSignInClient // NUEVA PROPIEDAD
 
     private lateinit var viewPager: ViewPager2
     private lateinit var tabLayout: TabLayout
@@ -51,6 +53,14 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         auth = Firebase.auth
 
+        // ----- NUEVO: Configurar GoogleSignInClient para el logout -----
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.default_web_client_id)) // Asegúrate que este string existe
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+        // -------------------------------------------------------------
+
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
 
@@ -60,9 +70,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         val adapter = ViewPagerAdapter(this)
         viewPager.adapter = adapter
-        // ----- APLICAR PAGE TRANSFORMER -----
         viewPager.setPageTransformer(ZoomOutPageTransformer())
-        // ------------------------------------
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
             // Asegúrate que este orden coincida con tu ViewPagerAdapter MÁS RECIENTE
@@ -102,7 +110,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
         val displayName = user?.displayName ?: user?.email ?: "Usuario"
 
         val options = arrayOf(
-            "Usuario: $displayName",
+            "Perfil de $displayName",
             "Cambiar Contraseña",
             "Cambiar Modo (Oscuro/Claro)",
             "Cerrar Sesión"
@@ -113,6 +121,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
+                        Toast.makeText(this, "Funcionalidad de perfil próximamente.", Toast.LENGTH_SHORT).show()
                     }
                     1 -> {
                         handleChangePassword()
@@ -120,8 +129,14 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
                     2 -> {
                         toggleTheme()
                     }
-                    3 -> {
-                        auth.signOut()
+                    3 -> { // Cerrar Sesión
+                        // ----- MODIFICADO: Añadir Google Sign Out -----
+                        auth.signOut() // Firebase sign out
+                        googleSignInClient.signOut().addOnCompleteListener {
+                            // Opcional: Manejar el resultado del signOut de Google
+                            Log.d(TAG, "Google Sign-Out completado.")
+                        }
+                        // ------------------------------------------
                         Toast.makeText(this, "Sesión cerrada.", Toast.LENGTH_SHORT).show()
                         navigateToLogin()
                     }
@@ -167,13 +182,12 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
 
         AppCompatDelegate.setDefaultNightMode(newNightMode)
         themePrefs.edit().putInt(PREF_KEY_THEME, newNightMode).apply()
-        // recreate() // Descomenta si quieres que el cambio de tema sea inmediato en MainActivity
+        // recreate() // Opcional: Para aplicar el tema inmediatamente.
     }
 
     override fun onSearchRequestedFromPantry(query: String) {
         Log.d(TAG, "MainActivity: Búsqueda solicitada desde despensa con query: $query")
         searchViewModel.setSearchQuery(query)
-        // Asegúrate que el índice (1) corresponde a SearchRecipesFragment según tu ViewPagerAdapter
-        viewPager.setCurrentItem(1, true)
+        viewPager.setCurrentItem(1, true) // Navega a la pestaña "Buscar" (índice 1)
     }
 }

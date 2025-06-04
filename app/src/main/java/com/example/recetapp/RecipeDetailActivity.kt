@@ -3,11 +3,14 @@ package com.example.recetapp
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
-import android.net.Uri
+import android.net.Uri // Asegúrate de que esta importación esté presente
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.text.SpannableString // Para subrayar el texto si quieres
+import android.text.Spanned // Para subrayar el texto
 import android.text.method.LinkMovementMethod
+import android.text.style.URLSpan // Para subrayar el texto
 import android.util.Log
 import android.util.TypedValue
 import android.view.ContextThemeWrapper
@@ -16,8 +19,9 @@ import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.core.content.ContextCompat
 import coil.load
-import com.example.recetapp.data.NutrientDetail // Asegúrate de que esta clase está definida
+import com.example.recetapp.data.NutrientDetail
 import com.example.recetapp.data.Recipe
 import com.google.android.material.appbar.CollapsingToolbarLayout
 import com.google.android.material.chip.Chip
@@ -42,11 +46,11 @@ import com.google.mlkit.nl.translate.TranslatorOptions
 
 class RecipeDetailActivity : AppCompatActivity() {
 
+    // ... (companion object y propiedades de clase sin cambios)
     companion object {
         const val EXTRA_RECIPE = "extra_recipe_data"
         private const val TAG = "RecipeDetailActivity"
 
-        // --- MAPAS PARA TRADUCCIÓN MANUAL ---
         private val dietHealthLabelTranslations = mapOf(
             "balanced" to "Equilibrado", "high-fiber" to "Alto en Fibra", "high-protein" to "Alto en Proteínas",
             "low-carb" to "Bajo en Carbohidratos", "low-fat" to "Bajo en Grasas", "low-sodium" to "Bajo en Sodio",
@@ -115,7 +119,9 @@ class RecipeDetailActivity : AppCompatActivity() {
     private lateinit var textViewRecipeUrlDetail: TextView
     private lateinit var fabAddToList: FloatingActionButton
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
+        // ... (código onCreate existente sin cambios hasta populateUI)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_recipe_detail)
 
@@ -138,7 +144,6 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         if (currentRecipe != null) {
-            // Comprueba si la receta ya está en favoritos en Firestore
             checkIfFavorite(currentRecipe!!)
             populateUI(currentRecipe!!)
         } else {
@@ -147,6 +152,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun initializeViews() {
+        // ... (código initializeViews existente sin cambios)
         collapsingToolbar = findViewById(R.id.collapsingToolbar)
         imageViewRecipeDetail = findViewById(R.id.imageViewRecipeDetail)
         textViewRecipeLabelBody = findViewById(R.id.textViewRecipeLabelDetail_Body)
@@ -171,39 +177,47 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun initializeTranslator() {
+        // ... (código initializeTranslator existente sin cambios)
         val options = TranslatorOptions.Builder()
             .setSourceLanguage(TranslateLanguage.ENGLISH)
             .setTargetLanguage(TranslateLanguage.SPANISH)
             .build()
         englishSpanishTranslator = Translation.getClient(options)
+        lifecycle.addObserver(englishSpanishTranslator!!)
 
         val conditions = DownloadConditions.Builder().build()
 
         Log.d(TAG, "Iniciando descarga del modelo de traducción ES (si es necesario)...")
         if (::textViewIngredientsDetail.isInitialized) {
-            textViewIngredientsDetail.text = "Preparando traductor de ingredientes..."
+            textViewIngredientsDetail.text = "Preparando traductor..."
         }
 
         englishSpanishTranslator?.downloadModelIfNeeded(conditions)
             ?.addOnSuccessListener {
                 isTranslationModelDownloaded = true
                 Log.d(TAG, "Modelo de traducción ES descargado o ya presente.")
-                if (::textViewIngredientsDetail.isInitialized) {
-                    currentRecipe?.let { populateIngredientsUI(it) }
+                currentRecipe?.let { recipe ->
+                    if (::textViewIngredientsDetail.isInitialized && !isDestroyed && !isFinishing) {
+                        populateIngredientsUI(recipe)
+                    }
                 }
             }
             ?.addOnFailureListener { exception ->
                 isTranslationModelDownloaded = false
                 Log.e(TAG, "Error al descargar modelo de traducción ES.", exception)
-                Toast.makeText(this, "No se pudo descargar modelo para traducir ingredientes.", Toast.LENGTH_LONG).show()
-                if (::textViewIngredientsDetail.isInitialized) {
-                    currentRecipe?.let { populateIngredientsUI(it) }
+                if (isFinishing || isDestroyed) return@addOnFailureListener
+
+                Toast.makeText(this, "No se pudo descargar modelo para traducir.", Toast.LENGTH_LONG).show()
+                currentRecipe?.let { recipe ->
+                    if (::textViewIngredientsDetail.isInitialized && !isDestroyed && !isFinishing) {
+                        populateIngredientsUI(recipe)
+                    }
                 }
             }
-        englishSpanishTranslator?.let { lifecycle.addObserver(it) }
     }
 
     private fun populateUI(recipe: Recipe) {
+        // ... (código anterior de populateUI hasta la sección de URL)
         collapsingToolbar.title = recipe.label ?: "Detalle de Receta"
         textViewRecipeLabelBody.text = recipe.label ?: "N/A"
 
@@ -242,25 +256,11 @@ class RecipeDetailActivity : AppCompatActivity() {
             textViewLabelsTitle.visibility = View.VISIBLE
             chipGroupLabels.visibility = View.VISIBLE
             allLabels.distinct().forEach { labelString ->
-                // 1. Crea el Chip aplicando el estilo deseado
                 val chip = Chip(ContextThemeWrapper(this, com.google.android.material.R.style.Widget_Material3_Chip_Assist))
-
                 val translatedLabel = dietHealthLabelTranslations[labelString.lowercase(Locale.ROOT)] ?: labelString
                 chip.text = translatedLabel
-
-                // 2. Establece el color de fondo específico
                 chip.chipBackgroundColor = ColorStateList.valueOf(Color.parseColor("#e9c46a"))
-
-                // ----- MODIFICACIÓN AQUÍ -----
-                // Establecer un color de texto que contraste bien con #e9c46a, independientemente del tema
-                // Puedes usar un color definido en tus colors.xml o un color directo.
-                // Por ejemplo, un negro o un gris oscuro.
-                // Si tienes un color definido en colors.xml, por ejemplo: <color name="chip_text_color_on_custom_bg">#DE000000</color> (negro con 87% opacidad)
-                // chip.setTextColor(ContextCompat.getColor(this, R.color.chip_text_color_on_custom_bg))
-                // O directamente:
-                chip.setTextColor(Color.BLACK) // O un gris oscuro como Color.parseColor("#D9000000")
-                // -----------------------------
-
+                chip.setTextColor(Color.BLACK)
                 chipGroupLabels.addView(chip)
             }
         } else {
@@ -289,13 +289,34 @@ class RecipeDetailActivity : AppCompatActivity() {
         } else { textViewRecipeSourceDetail.visibility = View.GONE }
 
         if (!recipe.url.isNullOrBlank()) {
-            textViewRecipeUrlDetail.text = recipe.url
-            textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance()
+            val urlText = recipe.url
+            textViewRecipeUrlDetail.text = urlText // Mostrar la URL como texto
             textViewRecipeUrlDetail.visibility = View.VISIBLE
             sourceOrUrlExists = true
-        } else { textViewRecipeUrlDetail.visibility = View.GONE }
+
+            // ----- MODIFICACIÓN PARA HACER LA URL CLICKEABLE -----
+            textViewRecipeUrlDetail.setOnClickListener {
+                try {
+                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(urlText))
+                    startActivity(browserIntent)
+                } catch (e: Exception) {
+                    Log.e(TAG, "No se pudo abrir la URL: $urlText", e)
+                    Toast.makeText(this, "No se pudo abrir el enlace", Toast.LENGTH_SHORT).show()
+                }
+            }
+            // Opcional: subrayar el texto para que parezca más un enlace
+            // val spannableString = SpannableString(urlText)
+            // spannableString.setSpan(URLSpan(urlText), 0, urlText.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            // textViewRecipeUrlDetail.text = spannableString
+            // textViewRecipeUrlDetail.movementMethod = LinkMovementMethod.getInstance() // Necesario si usas URLSpan para el clic por defecto
+            // -------------------------------------------------------
+
+        } else {
+            textViewRecipeUrlDetail.visibility = View.GONE
+        }
         textViewSourceUrlTitle.visibility = if(sourceOrUrlExists) View.VISIBLE else View.GONE
 
+        // ... (resto del código de populateUI: listeners de FABs)
         fabFavorite.setOnClickListener {
             currentRecipe?.let {
                 if (it.isFavorite) {
@@ -314,6 +335,7 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun populateIngredientsUI(recipe: Recipe) {
+        // ... (código populateIngredientsUI existente, con las correcciones de !isFinishing())
         if (!::textViewIngredientsDetail.isInitialized) {
             Log.e(TAG, "populateIngredientsUI: textViewIngredientsDetail no inicializada.")
             return
@@ -327,21 +349,23 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         if (isTranslationModelDownloaded && englishSpanishTranslator != null) {
-            textViewIngredientsDetail.text = "Traduciendo ingredientes..."
+            if (textViewIngredientsDetail.text.toString().isBlank() || textViewIngredientsDetail.text.toString() == "Preparando traductor...") {
+                textViewIngredientsDetail.text = "Traduciendo ingredientes..."
+            }
 
             val translatedLinesArray = arrayOfNulls<String>(ingredientLines.size)
             var tasksCompleted = 0
             val totalTasksToExecute = ingredientLines.count { it.isNotBlank() }
 
-            ingredientLines.forEachIndexed { index, line ->
-                translatedLinesArray[index] = if (line.isBlank()) "" else "- $line (Original)"
-            }
-
             if (totalTasksToExecute == 0) {
-                textViewIngredientsDetail.text = translatedLinesArray.joinToString("\n").trim()
-                Log.d(TAG, "No hay ingredientes válidos para traducir en la lista, mostrando originales/blancos.")
+                textViewIngredientsDetail.text = ingredientLines.joinToString(separator = "\n") { if (it.isBlank()) "" else "- $it" }.trim()
+                Log.d(TAG, "No hay ingredientes válidos para traducir, mostrando originales/blancos.")
                 textViewIngredientsDetail.visibility = View.VISIBLE
                 return
+            }
+
+            ingredientLines.forEachIndexed { index, line ->
+                translatedLinesArray[index] = if (line.isBlank()) "" else "- $line (Original)"
             }
 
             ingredientLines.forEachIndexed { index, line ->
@@ -351,27 +375,36 @@ class RecipeDetailActivity : AppCompatActivity() {
                             translatedLinesArray[index] = "- $translatedText"
                         }
                         .addOnFailureListener { exception ->
-                            Log.w(TAG, "Error al traducir línea: '$line'. Usando original (ya establecido).", exception)
+                            Log.w(TAG, "Error al traducir línea: '$line'. Usando original.", exception)
                         }
                         .addOnCompleteListener {
                             tasksCompleted++
                             if (tasksCompleted == totalTasksToExecute) {
-                                val finalText = translatedLinesArray.filterNotNull().joinToString("\n")
-                                Log.d(TAG, "populateIngredientsUI - Texto final para ingredientes: $finalText")
-                                textViewIngredientsDetail.text = finalText
-                                Log.d(TAG, "populateIngredientsUI - Traducción de todos los ingredientes procesada.")
+                                if (isDestroyed || isFinishing()) return@addOnCompleteListener
+                                val finalText = translatedLinesArray.filterNotNull().joinToString("\n").trim()
+                                textViewIngredientsDetail.text = finalText.ifEmpty { "No se pudieron traducir los ingredientes." }
+                                Log.d(TAG, "Traducción de todos los ingredientes procesada.")
                             }
                         }
+                } else {
+                    tasksCompleted++ // Contar las líneas en blanco como tareas "completadas" para la lógica del contador
+                    if (tasksCompleted == totalTasksToExecute) {
+                        if (isDestroyed || isFinishing()) return@forEachIndexed
+                        val finalText = translatedLinesArray.filterNotNull().joinToString("\n").trim()
+                        textViewIngredientsDetail.text = finalText.ifEmpty { "No se pudieron traducir los ingredientes." }
+                        Log.d(TAG, "Traducción de todos los ingredientes procesada (con líneas en blanco).")
+                    }
                 }
             }
         } else {
-            Log.d(TAG, "populateIngredientsUI - Mostrando ingredientes originales (traductor no listo o descarga fallida).")
+            Log.d(TAG, "Mostrando ingredientes originales (traductor no listo o descarga fallida).")
             textViewIngredientsDetail.text = ingredientLines.joinToString(separator = "\n") { "- $it" }
         }
         textViewIngredientsDetail.visibility = View.VISIBLE
     }
 
     private fun populateNutritionUI(recipe: Recipe){
+        // ... (código populateNutritionUI existente)
         val nutritionBuilder = StringBuilder()
         val servingsForNutrition = recipe.servings?.takeIf { it > 0f }
         val nutritionSectionTitleText: String = if (servingsForNutrition != null) {
@@ -391,7 +424,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                     quantityToShow /= servingsForNutrition
                 }
                 if (nutrientNameTranslations.containsKey(nutrientLabelInLower) ||
-                    listOf("energy", "protein", "fat", "total lipid (fat)", "carbohydrate, by difference", "carbs", "fiber", "fiber, total dietary").contains(nutrientLabelInLower)
+                    listOf("energy", "protein", "fat", "total lipid (fat)", "carbohydrate, by difference", "carbs", "fiber", "fiber, total dietary", "sugars, total including nlea", "sugar").any { it == nutrientLabelInLower}
                 ) {
                     nutritionBuilder.append("${translatedNutrientName}: ${String.format(Locale.getDefault(), "%.1f", quantityToShow)} ${translatedUnit}\n")
                 }
@@ -412,6 +445,7 @@ class RecipeDetailActivity : AppCompatActivity() {
                 caloriesFallback = recipe.calories
                 caloriesFallbackLabel = "Calorías Totales:"
             }
+
             caloriesFallback?.let {
                 textViewNutritionTitle.visibility = View.VISIBLE
                 textViewNutritionInfoDetailed.text = "$caloriesFallbackLabel ${String.format(Locale.getDefault(), "%.0f kcal", it)}"
@@ -424,13 +458,17 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun handleRecipeError() {
-        if(::collapsingToolbar.isInitialized) { collapsingToolbar.title = "Error" }
-        if(::textViewRecipeLabelBody.isInitialized) { textViewRecipeLabelBody.text = "Error al cargar detalles" }
-        Toast.makeText(this, "No se pudieron cargar los detalles.", Toast.LENGTH_LONG).show()
-        finish()
+        // ... (código handleRecipeError existente)
+        if (!isFinishing && !isDestroyed) {
+            if (::collapsingToolbar.isInitialized) { collapsingToolbar.title = "Error" }
+            if (::textViewRecipeLabelBody.isInitialized) { textViewRecipeLabelBody.text = "Error al cargar detalles" }
+            Toast.makeText(this, "No se pudieron cargar los detalles.", Toast.LENGTH_LONG).show()
+            finish()
+        }
     }
 
     private fun updateFavoriteIcon(isFav: Boolean) {
+        // ... (código updateFavoriteIcon existente)
         if(::fabFavorite.isInitialized) {
             if (isFav) {
                 fabFavorite.setImageResource(R.drawable.ic_favorite)
@@ -438,13 +476,16 @@ class RecipeDetailActivity : AppCompatActivity() {
             } else {
                 fabFavorite.setImageResource(R.drawable.ic_favorite_border)
                 val typedValue = TypedValue()
-                theme.resolveAttribute(com.google.android.material.R.attr.colorSecondaryContainer, typedValue, true)
+                theme.resolveAttribute(com.google.android.material.R.attr.colorPrimaryContainer, typedValue, true)
                 fabFavorite.backgroundTintList = ColorStateList.valueOf(typedValue.data)
+                theme.resolveAttribute(com.google.android.material.R.attr.colorOnPrimaryContainer, typedValue, true)
+                fabFavorite.imageTintList = ColorStateList.valueOf(typedValue.data)
             }
         }
     }
 
     private fun addIngredientsToShoppingList(recipe: Recipe) {
+        // ... (código addIngredientsToShoppingList existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
             Toast.makeText(this, "Debes iniciar sesión para añadir a la lista.", Toast.LENGTH_SHORT).show()
@@ -480,13 +521,14 @@ class RecipeDetailActivity : AppCompatActivity() {
                     }
                     .addOnFailureListener { exception ->
                         Log.w(TAG, "addIngredientsToShoppingList: Error al traducir '$line'. Usando original.", exception)
-                        translatedItemsForFirestore.add(line.trim()) // Fallback al original
+                        translatedItemsForFirestore.add(line.trim())
                     }
                     .addOnCompleteListener {
                         translationTasksCompleted++
                         if (translationTasksCompleted == totalTranslationTasks) {
-                            Log.d(TAG, "addIngredientsToShoppingList: Todas las traducciones completadas. Items: ${translatedItemsForFirestore.joinToString()}")
-                            commitIngredientsToFirestoreBatch(translatedItemsForFirestore, recipe, userId)
+                            if (!isDestroyed && !isFinishing()) {
+                                commitIngredientsToFirestoreBatch(translatedItemsForFirestore, recipe, userId)
+                            }
                         }
                     }
             }
@@ -498,9 +540,10 @@ class RecipeDetailActivity : AppCompatActivity() {
     }
 
     private fun commitIngredientsToFirestoreBatch(itemsToAdd: List<String>, recipe: Recipe, userId: String) {
+        // ... (código commitIngredientsToFirestoreBatch existente, con las correcciones de !isFinishing())
         if (itemsToAdd.isEmpty()){
             Log.d(TAG, "commitIngredientsToFirestoreBatch: No hay items finales para añadir después del procesamiento.")
-            Toast.makeText(this, "No se añadieron ingredientes (lista vacía después de procesar).", Toast.LENGTH_SHORT).show()
+            if (!isDestroyed && !isFinishing()) Toast.makeText(this, "No se añadieron ingredientes (lista vacía después de procesar).", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -526,36 +569,36 @@ class RecipeDetailActivity : AppCompatActivity() {
         }
 
         if (itemsAttemptedInBatch == 0) {
-            Toast.makeText(this, "No hay ingredientes válidos para añadir al final.", Toast.LENGTH_SHORT).show()
+            if (!isDestroyed && !isFinishing()) Toast.makeText(this, "No hay ingredientes válidos para añadir al final.", Toast.LENGTH_SHORT).show()
             return
         }
 
         batch.commit()
             .addOnSuccessListener {
-                Log.d(TAG, "$itemsAttemptedInBatch ingrediente(s) de '${recipe.label}' procesados y añadidos a la lista de la compra.")
-                Toast.makeText(this, "$itemsAttemptedInBatch ingrediente(s) añadido(s) a la lista de la compra.", Toast.LENGTH_LONG).show()
+                if (!isDestroyed && !isFinishing()) {
+                    Log.d(TAG, "$itemsAttemptedInBatch ingrediente(s) de '${recipe.label}' procesados y añadidos a la lista de la compra.")
+                    Toast.makeText(this, "$itemsAttemptedInBatch ingrediente(s) añadido(s) a la lista de la compra.", Toast.LENGTH_LONG).show()
+                }
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Error al añadir ingredientes de '${recipe.label}' a la lista con batch.", e)
-                Toast.makeText(this, "Error al añadir ingredientes a la lista: ${e.message}", Toast.LENGTH_LONG).show()
+                if (!isDestroyed && !isFinishing()) {
+                    Log.w(TAG, "Error al añadir ingredientes de '${recipe.label}' a la lista con batch.", e)
+                    Toast.makeText(this, "Error al añadir ingredientes a la lista: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
     }
 
-    /**
-     * Crea un ID válido para Firestore a partir de la URI de la receta.
-     */
     private fun getRecipeId(recipe: Recipe): String {
+        // ... (código getRecipeId existente)
         return recipe.uri?.substringAfterLast('#')
-            ?: recipe.label!!.replace(Regex("[/\\\\#\\[\\]*?.]"), "_")
+            ?: recipe.label!!.replace(Regex("[/\\\\#\\[\\]*?.:$]"), "_")
     }
 
-    /**
-     * Comprueba en Firestore si la receta actual es favorita y actualiza la UI.
-     */
     private fun checkIfFavorite(recipe: Recipe) {
+        // ... (código checkIfFavorite existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            recipe.isFavorite = false
+            currentRecipe?.isFavorite = false
             updateFavoriteIcon(false)
             return
         }
@@ -565,53 +608,55 @@ class RecipeDetailActivity : AppCompatActivity() {
             .collection("favoriteRecipes").document(recipeId)
             .get()
             .addOnSuccessListener { document ->
-                val isFav = document.exists()
-                recipe.isFavorite = isFav
-                updateFavoriteIcon(isFav)
+                if (!isDestroyed && !isFinishing()) {
+                    val isFav = document.exists()
+                    currentRecipe?.isFavorite = isFav
+                    updateFavoriteIcon(isFav)
+                }
             }
-            .addOnFailureListener {
-                Log.w(TAG, "Error al comprobar favorito, asumiendo que no lo es.", it)
-                recipe.isFavorite = false
-                updateFavoriteIcon(false)
+            .addOnFailureListener {e ->
+                if (!isDestroyed && !isFinishing()) {
+                    Log.w(TAG, "Error al comprobar favorito, asumiendo que no lo es.", e)
+                    currentRecipe?.isFavorite = false
+                    updateFavoriteIcon(false)
+                }
             }
     }
 
-    /**
-     * Guarda la receta completa en la subcolección 'favoriteRecipes' del usuario.
-     */
     private fun saveRecipeToFavorites(recipe: Recipe) {
+        // ... (código saveRecipeToFavorites existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            Toast.makeText(this, "Debes iniciar sesión para guardar favoritos", Toast.LENGTH_SHORT).show()
+            if (!isDestroyed && !isFinishing()) Toast.makeText(this, "Debes iniciar sesión para guardar favoritos", Toast.LENGTH_SHORT).show()
             return
         }
         val recipeId = getRecipeId(recipe)
-
-        recipe.isFavorite = true
+        val recipeToSave = recipe.copy(isFavorite = true)
 
         db.collection("users").document(userId)
             .collection("favoriteRecipes").document(recipeId)
-            .set(recipe)
+            .set(recipeToSave)
             .addOnSuccessListener {
-                Log.d(TAG, "Receta añadida a favoritos en Firestore.")
-                updateFavoriteIcon(true)
-                Toast.makeText(this, "Guardada en favoritos", Toast.LENGTH_SHORT).show()
+                if (!isDestroyed && !isFinishing()) {
+                    Log.d(TAG, "Receta añadida a favoritos en Firestore.")
+                    currentRecipe?.isFavorite = true
+                    updateFavoriteIcon(true)
+                    Toast.makeText(this, "Guardada en favoritos", Toast.LENGTH_SHORT).show()
+                }
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Error al guardar receta en favoritos", e)
-                Toast.makeText(this, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
-                recipe.isFavorite = false
-                updateFavoriteIcon(false)
+                if (!isDestroyed && !isFinishing()) {
+                    Log.w(TAG, "Error al guardar receta en favoritos", e)
+                    Toast.makeText(this, "Error al guardar: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
     }
 
-    /**
-     * Elimina la receta de la subcolección 'favoriteRecipes' del usuario.
-     */
     private fun removeRecipeFromFavorites(recipe: Recipe) {
+        // ... (código removeRecipeFromFavorites existente, con las correcciones de !isFinishing())
         val userId = auth.currentUser?.uid
         if (userId == null) {
-            Toast.makeText(this, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
+            if (!isDestroyed && !isFinishing()) Toast.makeText(this, "Debes iniciar sesión", Toast.LENGTH_SHORT).show()
             return
         }
         val recipeId = getRecipeId(recipe)
@@ -620,21 +665,34 @@ class RecipeDetailActivity : AppCompatActivity() {
             .collection("favoriteRecipes").document(recipeId)
             .delete()
             .addOnSuccessListener {
-                Log.d(TAG, "Receta eliminada de favoritos en Firestore.")
-                recipe.isFavorite = false
-                updateFavoriteIcon(false)
-                Toast.makeText(this, "Eliminada de favoritos", Toast.LENGTH_SHORT).show()
+                if (!isDestroyed && !isFinishing()) {
+                    Log.d(TAG, "Receta eliminada de favoritos en Firestore.")
+                    currentRecipe?.isFavorite = false
+                    updateFavoriteIcon(false)
+                    Toast.makeText(this, "Eliminada de favoritos", Toast.LENGTH_SHORT).show()
+                }
             }
             .addOnFailureListener { e ->
-                Log.w(TAG, "Error al eliminar receta de favoritos", e)
-                Toast.makeText(this, "Error al eliminar: ${e.message}", Toast.LENGTH_SHORT).show()
-                recipe.isFavorite = true
-                updateFavoriteIcon(true)
+                if (!isDestroyed && !isFinishing()) {
+                    Log.w(TAG, "Error al eliminar receta de favoritos", e)
+                    Toast.makeText(this, "Error al eliminar: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
             }
     }
 
     override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
+        onBackPressedDispatcher.onBackPressed() // Esto ya llama a onBackPressed() si no hay nada más en la pila de back
+        // La animación se maneja en onBackPressed
         return true
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
+    }
+
+    override fun onDestroy() {
+        englishSpanishTranslator?.close()
+        super.onDestroy()
     }
 }

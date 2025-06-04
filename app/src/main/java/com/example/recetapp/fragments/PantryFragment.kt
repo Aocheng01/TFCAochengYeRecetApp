@@ -134,8 +134,8 @@ class PantryFragment : Fragment() {
         }
         buttonSuggestRecipes.setOnClickListener {
             if (pantryItemListLocal.isNotEmpty()) {
-                val ingredientsQuery = pantryItemListLocal.joinToString(separator = " ") { it.name }
-                Log.d(TAG, "Sugerir recetas con (todos los ingredientes): $ingredientsQuery")
+                val ingredientsQuery = pantryItemListLocal.joinToString(separator = ",") { it.name } // Cambiado a coma
+                Log.d(TAG, "Sugerir recetas con (ingredientes combinados): $ingredientsQuery")
                 listener?.onSearchRequestedFromPantry(ingredientsQuery)
             } else {
                 Toast.makeText(requireContext(), "Tu despensa está vacía.", Toast.LENGTH_SHORT).show()

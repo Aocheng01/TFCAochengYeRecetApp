@@ -15,6 +15,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.cardview.widget.CardView // Asegúrate que esté importado si usas CardView
 import androidx.core.view.isVisible
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.lifecycleScope
@@ -26,6 +27,7 @@ import com.example.recetapp.adapters.RecipeAdapter
 import com.example.recetapp.api.RetrofitClient
 import com.example.recetapp.data.Hit
 import com.example.recetapp.data.Recipe
+import com.example.recetapp.data.RecipeResponse
 import com.example.recetapp.viewmodels.SearchViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.ktx.auth
@@ -52,8 +54,7 @@ class SearchRecipesFragment : Fragment() {
     private lateinit var buttonSearch: Button
     private lateinit var buttonLoadMore: Button
     private lateinit var textViewAlternativeSearchInfo: TextView
-    private lateinit var imageViewDecorativeSearch: ImageView
-    private lateinit var textViewWelcome: TextView // NUEVA PROPIEDAD PARA EL TEXTO DE BIENVENIDA
+    private lateinit var cardViewWelcome: CardView // ID del CardView que contiene la imagen y el texto de bienvenida
 
     private var isLoading = false
     private val searchViewModel: SearchViewModel by activityViewModels()
@@ -74,14 +75,13 @@ class SearchRecipesFragment : Fragment() {
         buttonSearch = view.findViewById(R.id.buttonSearch)
         buttonLoadMore = view.findViewById(R.id.buttonLoadMore)
         textViewAlternativeSearchInfo = view.findViewById(R.id.textViewAlternativeSearchInfo)
-        imageViewDecorativeSearch = view.findViewById(R.id.imageViewDecorativeSearch)
-        textViewWelcome = view.findViewById(R.id.textViewWelcome) // INICIALIZAR TEXTO DE BIENVENIDA
+        cardViewWelcome = view.findViewById(R.id.cardViewWelcome)
 
         recipeAdapter = RecipeAdapter(mutableListOf()) { openRecipeDetail(it) }
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
         recyclerView.adapter = recipeAdapter
 
-        updateUIForNoSearchState() // Establecer estado inicial
+        updateUIForNoSearchState()
 
         buttonSearch.setOnClickListener {
             performSearchFromInput()
@@ -97,16 +97,10 @@ class SearchRecipesFragment : Fragment() {
             if (query != null && query.isNotBlank()) {
                 Log.d(TAG, "SearchRecipesFragment: Recibida query del ViewModel: $query")
                 editTextSearchQuery.setText(query)
-                // Asegurarse de que la UI se actualiza para el estado de búsqueda
-                imageViewDecorativeSearch.visibility = View.GONE
-                textViewWelcome.visibility = View.GONE
-                recyclerView.visibility = View.GONE // Ocultar hasta que haya resultados
-                textViewAlternativeSearchInfo.visibility = View.VISIBLE
                 performSearch(query)
                 searchViewModel.onSearchQueryNavigated()
-            } else if (query == null) { // Si la query es null (ej. después de navegar y volver)
-                // Solo restaurar estado inicial si no hay texto en el EditText
-                if (editTextSearchQuery.text.isBlank() && recipeAdapter.itemCount == 0) {
+            } else if (query == null) {
+                if (editTextSearchQuery.text.isBlank() && recipeAdapter.itemCount == 0 && !isLoading) {
                     updateUIForNoSearchState()
                 }
             }
@@ -114,8 +108,8 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun updateUIForNoSearchState() {
-        imageViewDecorativeSearch.visibility = View.VISIBLE
-        textViewWelcome.visibility = View.VISIBLE
+        if (!isAdded) return
+        cardViewWelcome.visibility = View.VISIBLE
         textViewAlternativeSearchInfo.visibility = View.GONE
         recyclerView.visibility = View.GONE
         buttonLoadMore.visibility = View.GONE
@@ -125,67 +119,75 @@ class SearchRecipesFragment : Fragment() {
     }
 
     private fun performSearchFromInput() {
-        val query = editTextSearchQuery.text.toString().trim()
-        if (query.isBlank()) {
-            Toast.makeText(requireContext(), "Introduce al menos un ingrediente.", Toast.LENGTH_SHORT).show()
-            // Decidir si volver al estado inicial o mantener la última búsqueda/mensaje
-            // Por ahora, no cambiamos el estado aquí si la query es vacía tras un click,
-            // solo mostramos el Toast. El estado inicial se maneja en onViewCreated y
-            // potencialmente si el ViewModel se resetea.
+        val userInput = editTextSearchQuery.text.toString().trim()
+        if (userInput.isBlank()) {
+            Toast.makeText(requireContext(), "Introduce al menos un término de búsqueda.", Toast.LENGTH_SHORT).show()
+            updateUIForNoSearchState()
             return
         }
-        performSearch(query)
+        performSearch(userInput)
     }
 
-    private fun performSearch(query: String) {
-        Log.d(TAG, "Iniciando búsqueda OR para: '$query'")
+    private fun performSearch(userInput: String) {
+        if (!isAdded) return
+        Log.d(TAG, "Procesando input del usuario para búsqueda: '$userInput'")
         hideKeyboard()
 
-        // Actualizar UI para estado de búsqueda
-        imageViewDecorativeSearch.visibility = View.GONE
-        textViewWelcome.visibility = View.GONE
-        recyclerView.visibility = View.GONE // Ocultar mientras se carga
+        cardViewWelcome.visibility = View.GONE
+        recyclerView.visibility = View.GONE
         textViewAlternativeSearchInfo.visibility = View.VISIBLE
-        textViewAlternativeSearchInfo.text = "Buscando recetas para \"$query\"..." // Mensaje de búsqueda
-        buttonLoadMore.visibility = View.GONE // Ocultar el botón de cargar más
+        textViewAlternativeSearchInfo.text = "Buscando recetas para \"$userInput\"..."
+        buttonLoadMore.visibility = View.GONE
         if (::recipeAdapter.isInitialized) {
-            recipeAdapter.submitNewList(emptyList()) // Limpiar resultados anteriores
+            recipeAdapter.submitNewList(emptyList())
         }
 
-        val ingredients = query.split(" ", ",")
+        // ----- MODIFICADO: Parsear la entrada por comas para búsquedas individuales -----
+        val searchTerms = userInput.split(',')
             .map { it.trim().lowercase(java.util.Locale.getDefault()) }
             .filter { it.isNotBlank() }
             .distinct()
+        // -------------------------------------------------------------------------
 
-        if (ingredients.isEmpty()) {
-            Toast.makeText(requireContext(), "No se ingresaron ingredientes válidos.", Toast.LENGTH_SHORT).show()
-            textViewAlternativeSearchInfo.text = "Por favor, introduce ingredientes válidos."
-            // Aquí no volvemos a updateUIForNoSearchState() porque se intentó una búsqueda.
+        if (searchTerms.isEmpty()) {
+            Toast.makeText(requireContext(), "No se ingresaron términos de búsqueda válidos.", Toast.LENGTH_SHORT).show()
+            textViewAlternativeSearchInfo.text = "Por favor, introduce términos de búsqueda válidos."
+            recyclerView.visibility = View.GONE // Asegurarse que el recycler está oculto
             return
         }
-        startIndividualIngredientSearches(ingredients, query)
+
+        Log.d(TAG, "Términos de búsqueda individuales: $searchTerms")
+        startIndividualTermSearches(searchTerms, userInput) // Pasar userInput para el mensaje final
     }
 
-    private fun startIndividualIngredientSearches(ingredients: List<String>, originalQuery: String) {
+    // ----- MODIFICADO Y RESTAURADO: Búsqueda individual por término y combinación de resultados (Lógica OR) -----
+    private fun startIndividualTermSearches(searchTerms: List<String>, originalUserInput: String) {
         if (!isAdded) return
         isLoading = true
-        // El mensaje "Buscando..." ya se estableció en performSearch
+        // El mensaje "Buscando..." ya se ha puesto en performSearch
 
         val accumulatedHits = mutableListOf<Hit>()
+
         viewLifecycleOwner.lifecycleScope.launch {
-            // ... (lógica de deferredResults.awaitAll() sin cambios)
-            val responses = ingredients.map { ingredient ->
+            val deferredResults = searchTerms.map { term ->
                 async(Dispatchers.IO) {
                     try {
-                        Log.d(TAG, "Búsqueda individual para: '$ingredient' en hilo: ${Thread.currentThread().name}")
-                        RetrofitClient.instance.searchRecipes(query = ingredient).execute()
+                        Log.d(TAG, "Búsqueda individual para: '$term' en hilo: ${Thread.currentThread().name}")
+                        RetrofitClient.instance.searchRecipes(query = term).execute()
+                    } catch (e: IOException) {
+                        Log.e(TAG, "IOException en búsqueda para '$term': ${e.message}", e)
+                        null
+                    } catch (e: HttpException) {
+                        Log.e(TAG, "HttpException en búsqueda para '$term': ${e.code()} - ${e.message()}", e)
+                        null
                     } catch (e: Exception) {
-                        Log.e(TAG, "Error en búsqueda individual para '$ingredient': ${e.message}", e)
+                        Log.e(TAG, "Error desconocido en búsqueda para '$term': ${e.message}", e)
                         null
                     }
                 }
-            }.awaitAll()
+            }
 
+            val responses = deferredResults.awaitAll()
 
             if (!isAdded) {
                 isLoading = false
@@ -206,32 +208,24 @@ class SearchRecipesFragment : Fragment() {
             val distinctResults = accumulatedHits.distinctBy { it.recipe?.uri }
             val numberOfResults = distinctResults.size
 
-            imageViewDecorativeSearch.visibility = View.GONE // Asegurar que la imagen decorativa está oculta
-            textViewWelcome.visibility = View.GONE       // Asegurar que el texto de bienvenida está oculto
+            cardViewWelcome.visibility = View.GONE // Asegurar que sigue oculto
 
             if (numberOfResults > 0) {
-                Log.d(TAG, "Mostrando $numberOfResults resultados únicos combinados.")
+                Log.d(TAG, "Mostrando $numberOfResults resultados únicos combinados para: \"$originalUserInput\"")
                 recipeAdapter.submitNewList(distinctResults)
-                val searchedIngredientsText = if (ingredients.size > 1) {
-                    "para: ${ingredients.joinToString(", ")}"
-                } else if (ingredients.isNotEmpty()){
-                    "para: \"${ingredients.first()}\""
-                } else {
-                    ""
-                }
-                textViewAlternativeSearchInfo.text = "Se encontraron $numberOfResults recetas $searchedIngredientsText"
+                textViewAlternativeSearchInfo.text = "Se encontraron $numberOfResults recetas para \"$originalUserInput\""
                 recyclerView.visibility = View.VISIBLE
-                textViewAlternativeSearchInfo.visibility = View.VISIBLE
             } else {
-                Log.d(TAG, "No se encontraron resultados en ninguna búsqueda individual.")
-                textViewAlternativeSearchInfo.text = "No se encontraron recetas para \"$originalQuery\"."
+                Log.d(TAG, "No se encontraron resultados para: \"$originalUserInput\"")
+                textViewAlternativeSearchInfo.text = "No se encontraron recetas para \"$originalUserInput\"."
                 recyclerView.visibility = View.GONE
-                recipeAdapter.submitNewList(emptyList<Hit>())
-                textViewAlternativeSearchInfo.visibility = View.VISIBLE
+                if (::recipeAdapter.isInitialized) recipeAdapter.submitNewList(emptyList())
             }
+            textViewAlternativeSearchInfo.visibility = View.VISIBLE
             updateLoadMoreButtonVisibility()
         }
     }
+    // ------------------------------------------------------------------------------------------------
 
     private fun openRecipeDetail(recipe: Recipe) {
         if (!isAdded) return
