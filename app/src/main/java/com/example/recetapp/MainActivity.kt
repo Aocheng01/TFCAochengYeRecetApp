@@ -124,7 +124,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
                     2 -> {
                         toggleTheme()
                     }
-                    3 -> { // Cerrar Sesión
+                    3 -> { // Cerrar Sesiónd
 
                         auth.signOut() // Firebase sign out
                         googleSignInClient.signOut().addOnCompleteListener { // Google Sign Out -----
