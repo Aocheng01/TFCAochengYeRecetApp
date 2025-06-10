@@ -61,7 +61,7 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
-    // Dependencias para Retrofit y Gson
+    // Dependencias para Retrofit y Gson.
     implementation(libs.retrofit)
     implementation(libs.converter.gson) // Para convertir JSON a objetos Kotlin
 

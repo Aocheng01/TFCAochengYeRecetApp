@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
         val displayName = user?.displayName ?: user?.email ?: "Usuario"
 
         val options = arrayOf(
-            "Perfil de $displayName",
+            "Usuario: $displayName",
             "Cambiar Contraseña",
             "Cambiar Modo (Oscuro/Claro)",
             "Cerrar Sesión"
@@ -117,7 +117,6 @@ class MainActivity : AppCompatActivity(), PantryFragmentListener {
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
-                        Toast.makeText(this, "Funcionalidad de perfil próximamente.", Toast.LENGTH_SHORT).show()
                     }
                     1 -> {
                         handleChangePassword()
