@@ -56,37 +56,41 @@
 
 <h2 style="color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 5px;">📸 Capturas de Pantalla</h2>
 
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Inicio de Sesión</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_INICIO_SESION.png" alt="Pantalla de Inicio de Sesión" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Configuración</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_CONFIGURACION.png" alt="Pantalla de Configuración" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Pantalla Principal (Búsqueda de Recetas)</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_PANTALLA_PRINCIPAL.png" alt="Pantalla Principal con Búsqueda de Recetas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Detalles de Receta</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_RECETA_DETALLE.png" alt="Pantalla de Detalles de una Receta" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Recetas Favoritas</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_FAVORITOS.png" alt="Pantalla de Recetas Favoritas" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Lista de la Compra</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_LISTA_COMPRA.png" alt="Pantalla de la Lista de la Compra" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
-
-<h3 style="color: #343a40; margin-top: 1.5em;">➡️ Despensa Personal</h3>
-<p style="text-align: center;">
-    <img src="URL_DE_TU_IMAGEN_DESPENSA.png" alt="Pantalla de la Despensa Personal" style="max-width: 100%; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
-</p>
+<table style="width: 100%; border-collapse: collapse; text-align: center;">
+    <tr>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Inicio de Sesión</h3>
+            <img src="images/Inicio de sesion.png" alt="Pantalla de Inicio de Sesión" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Configuración</h3>
+            <img src="images/Configuracion.png" alt="Pantalla de Configuración" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Pantalla Principal</h3>
+            <img src="images/Pantalla Principal.png" alt="Pantalla Principal con Búsqueda de Recetas" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+    </tr>
+    <tr>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Detalles de Receta</h3>
+            <img src="images/Receta.png" alt="Pantalla de Detalles de una Receta" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Recetas Favoritas</h3>
+            <img src="images/Fav.png" alt="Pantalla de Recetas Favoritas" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+        <td style="padding: 10px; vertical-align: top; width: 33.33%;">
+            <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Lista de la Compra</h3>
+            <img src="images/Lista de compras.png" alt="Pantalla de la Lista de la Compra" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3" style="padding: 10px; vertical-align: top;">
+            <div style="width: 33.33%; margin: 0 auto; text-align: center;"> 
+                <h3 style="color: #343a40; margin-bottom: 0.5em; font-size: 1.1em;">➡️ Despensa Personal</h3>
+                <img src="images/Despensa.png" alt="Pantalla de la Despensa Personal" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+            </div>
+        </td>
+    </tr>
+</table>
